@@ -576,7 +576,7 @@ def create_pitch_Length_bars(df_in, delivery_type):
     elif delivery_type == "Spin":
         ordered_keys = ordered_spin_keys(_cfg)
     else:
-        fig, ax = plt.subplots(figsize=FIG_SIZE)
+        fig, ax = plt.subplots(figsize=(3.5, 7))
         ax.text(0.5, 0.5, "Invalid Delivery Type", ha="center", va="center", fontsize=12)
         ax.axis("off")
         return fig
@@ -616,7 +616,7 @@ def create_pitch_Length_bars(df_in, delivery_type):
 
     categories = df_summary.index.tolist()[::-1]
 
-    fig, axes = plt.subplots(3, 1, figsize=FIG_SIZE, sharey=True)
+    fig, axes = plt.subplots(3, 1, figsize=(3.5, 7), sharey=True)
     plt.subplots_adjust(hspace=10)
 
     metrics = ["Dismissals", "Average", "StrikeRate"]
