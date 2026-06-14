@@ -708,10 +708,10 @@ def create_spinner_hitting_missing(df_in, handedness_label):
     ax_map.axis('off')
 
     # Labels
-    ax_map.text(0.74, 1.4, f"Hitting: {hitting_pct:.0f}%    ",
+    ax_map.text(0.74, 1.4, f"Hitting: {hitting_pct:.0f}%  ",
                 transform=ax_map.transData, ha='right', va='top',
                 fontsize=17, color='#3b3b3b', weight='bold')
-    ax_map.text(1.2, 1.4, f"   Missing: {missing_pct:.0f}%",
+    ax_map.text(1.2, 1.4, f"  Missing: {missing_pct:.0f}%",
                 transform=ax_map.transData, ha='right', va='top',
                 fontsize=17, color='#D3D3D3', weight='bold')
 
@@ -753,14 +753,14 @@ def create_spinner_hitting_missing(df_in, handedness_label):
         ax = axes[i]
         bars = ax.barh(y_labels, meta["data"], color=bar_colors, height=0.5)
         ax.invert_yaxis()
-        ax.set_title(meta["title"], fontsize=15, pad=5)
+        ax.set_title(meta["title"], fontsize=18, pad=5)
         ax.set_xlim(0, max_values[metric])
         ax.xaxis.set_visible(False)
 
         if i == 0:
             ax.tick_params(axis='y', length=0)
             ax.set_yticks([0, 1])
-            ax.set_yticklabels(y_labels, fontsize=18, weight='bold')
+            ax.set_yticklabels(y_labels, fontsize=18, pad=5)
         else:
             ax.yaxis.set_visible(False)
 
