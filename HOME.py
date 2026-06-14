@@ -127,3 +127,15 @@ if "data_df" in st.session_state:
     if st.checkbox("Show first 5 rows"):
         st.write(f"**File:** `{st.session_state.get('file_name', 'N/A')}`")
         st.dataframe(df_loaded.head())
+
+import streamlit.components.v1 as components
+
+# Inject JavaScript to override the browser tab title
+components.html(
+    """
+    <script>
+        window.parent.document.title = "VR DANshboard";
+    </script>
+    """,
+    height=0
+)
