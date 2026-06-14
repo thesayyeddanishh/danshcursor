@@ -1167,7 +1167,7 @@ def create_speed_metrics_bar(df_in, delivery_type):
     metrics = ["Runs", "Dismissals", "Avg", "SR"]
 
     fig = plt.figure(
-        figsize=(7, 10),
+        figsize=(7, 9),
         facecolor="white"
     )
 
