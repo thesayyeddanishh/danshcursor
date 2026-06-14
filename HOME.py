@@ -12,16 +12,27 @@ from io import StringIO
 from cricket_config import FORMAT_KEYS, FORMAT_LABELS, resolve_format
 
 REQUIRED_COLS = [
+    "Innings",
+    "Over",
+    "Ball",
     "BatsmanName",
-    "DeliveryType",
+    "BowlerName",
+    "BowlingTeam",
+    "BattingTeam"
+    "IsBowlerRightHanded",
+    "IsBatsmanRightHanded",
     "Wicket",
+    "Runs",
+    "ReleaseY"
+    "ReleaseZ",
+    "ReleaseSpeed",
+    "Deviation",
+    "Swing",
+    "DeliveryType",
     "StumpsY",
     "StumpsZ",
-    "BattingTeam",
     "CreaseY",
     "CreaseZ",
-    "Runs",
-    "IsBatsmanRightHanded",
     "LandingX",
     "LandingY",
     "BounceX",
@@ -29,10 +40,17 @@ REQUIRED_COLS = [
     "InterceptionX",
     "InterceptionZ",
     "InterceptionY",
-    "Over",
+    "Ground",
+    "Tour",
+    "Year",
+    "Match"
 ]
 
-st.set_page_config(layout="wide", page_title="VR DANshboard")
+st.set_page_config(
+    layout="wide", 
+    page_title="VR DANshboard", 
+    page_icon="danshboard/hawk-logo.png"
+)
 
 st.markdown(
     """
