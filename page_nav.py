@@ -18,7 +18,7 @@ def render_page_nav(page_id: str) -> None:
     idx = next((i for i, (pid, _) in enumerate(_NAV) if pid == page_id), 0)
     prev_path = _NAV[(idx - 1) % len(_NAV)][1]
     next_path = _NAV[(idx + 1) % len(_NAV)][1]
-    c1, _mid, c3 = st.columns([0.4, 1, 0.4])
+    c1, _mid, c3 = st.columns([0.4, 10, 0.4])
     with c1:
         if st.button("◀", key=f"nav_prev_{page_id}", help="Previous page"):
             st.switch_page(prev_path)
