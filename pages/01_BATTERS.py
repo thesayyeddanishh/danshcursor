@@ -1134,70 +1134,59 @@ def create_speed_metrics_bar(df_in, delivery_type):
     # Finally, fill any remaining NaNs (0/0 cases) with 0
     summary["Avg"] = summary["Avg"].fillna(0)
 
-    # 4. Plotting - Wider figure to prevent squashing
-    fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(16, 4), sharey=True)
-    plt.subplots_adjust(wspace=0.3) 
+    # 4. Plotting - Cleaner Aesthetics
+    # Use a softer blue and a clean, light background
+    bar_color = '#4A90E2' 
+    text_color = '#333333'
+    
+    fig, axes = plt.subplots(1, 4, figsize=(15, 3.5), sharey=True)
+    fig.patch.set_facecolor('white') 
     
     y = np.arange(len(ordered_groups))
-    height = 0.7 
+    height = 0.6 
 
     metrics = ["Runs", "Dismissals", "Avg", "SR"]
-    titles = ["Runs", "Outs", "Avg", "SR"]
-    axes = [ax1, ax2, ax3, ax4]
+    titles = ["Total Runs", "Dismissals", "Batting Avg", "Strike Rate"]
 
     for ax, metric, title in zip(axes, metrics, titles):
+        ax.set_facecolor('white')
         vals = summary[metric]
-        ax.barh(y, vals, color='#ff5000', edgecolor='black', height=height)
-        ax.set_title(title, fontsize=16, fontweight='bold')
         
-        # FIX: Place text at a fixed X-position (5% of the max value) 
-        # to ensure it's always readable and aligned
+        # Add a subtle grid to help the eye align values across rows
+        ax.grid(axis='x', linestyle='--', alpha=0.3, zorder=0)
+        
+        ax.barh(y, vals, color=bar_color, edgecolor='none', height=height, zorder=2)
+        ax.set_title(title, fontsize=12, fontweight='bold', color=text_color, pad=12)
+        
+        # Position labels outside the bars for consistency
         max_val = vals.max() if vals.max() > 0 else 1
         for i, v in enumerate(vals):
-            # If the bar is very short, put black text after it. 
-            # If bar is long, put white text at the start of the bar.
-            label_x = max_val * 0.05 
-            
             ax.text(
-                label_x, i, 
-                f'{v:.0f}' if metric != "Avg" else f'{v:.1f}',
-                va='center', 
-                ha='left',
-                fontweight='bold', 
-                fontsize=15,
-                color='white' if v > (max_val * 0.2) else 'black'
+                v + (max_val * 0.03), i, 
+                f'{v:.0f}' if metric not in ["Avg", "SR"] else f'{v:.1f}',
+                va='center', ha='left', fontsize=10, color=text_color, fontweight='medium'
             )
-
-    # Formatting
-    ax1.set_yticks(y)
-    ax1.set_yticklabels(ordered_groups, fontsize=14, fontweight='bold')
-    
-    for ax in axes:
+            
+        # Clean up spines (the box around the chart)
         ax.spines[['top', 'right', 'bottom']].set_visible(False)
-        ax.xaxis.set_visible(False)
-        ax.invert_yaxis() 
+        ax.spines['left'].set_color('#dddddd') 
+        ax.invert_yaxis()
+        
+        # Give the bars room to breathe on the right side
+        ax.set_xlim(0, max_val * 1.35)
 
-    plt.tight_layout(pad=0.35)
-    fig.canvas.draw()
-    p0 = ax1.get_position()
-    p3 = ax4.get_position()
-    pad_x = 0.012
-    pad_y = 0.018
-    border_rect = patches.Rectangle(
-        (p0.x0 - pad_x, p0.y0 - pad_y),
-        (p3.x1 - p0.x0) + 2 * pad_x,
-        (p0.y1 - p0.y0) + 2 * pad_y,
-        facecolor="none",
-        edgecolor="black",
-        linewidth=0.6,
-        transform=fig.transFigure,
-        clip_on=False,
-    )
-    fig.patches.append(border_rect)
-
-    return fig
+    # Formatting Y-ticks
+    axes[0].set_yticks(y)
+    axes[0].set_yticklabels(ordered_groups, fontsize=11, color=text_color, fontweight='bold')
+    axes[0].tick_params(axis='y', length=0)
     
-# PAG LAYOUT SETUP
+    plt.tight_layout(pad=2.0)
+    
+    return fig
+
+#----------------------------------------
+# PAGE LAYOUT SETUP
+#----------------------------------------
 
 st.set_page_config(
     layout="wide"
