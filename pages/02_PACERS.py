@@ -26,9 +26,6 @@ from cricket_config import (
     add_crease_lateral_zone_background,
 )
 
-from page_nav import render_page_nav
-
-
 # --- CHART 3: PITCHMAP (BOUNCE LOCATION) ---
 def create_pacer_pitch_map(df_in):
     cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
