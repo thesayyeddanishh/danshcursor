@@ -463,15 +463,20 @@ def pitch_map_figsize(cfg: FormatConfig, width: float = 3.0) -> Tuple[float, flo
     return (width, h)
 
 
-def add_crease_lateral_zone_background(ax, zorder: int = 0) -> None:
+def add_crease_lateral_zone_background(ax, is_rhb: bool, zorder: int = 0) -> None:
     """
-    Vertical bands on crease beehive where x = CreaseY (RHB zone boundaries).
-    Way Outside Off | Outside Off | Stumps | Leg
+    Vertical bands on crease beehive. 
+    If LHB (is_rhb=False), values are flipped by multiplying by -1.
     """
-    ax.axvspan(-1.0, -0.65, facecolor="#ffffcc", alpha=0.55, zorder=zorder, linewidth=0)
-    ax.axvspan(-0.65, -0.18, facecolor="#ffcccc", alpha=0.55, zorder=zorder, linewidth=0)
-    ax.axvspan(-0.18, 0.18, facecolor="#ccffcc", alpha=0.55, zorder=zorder, linewidth=0)
-    ax.axvspan(0.18, 1.0, facecolor="#cce5ff", alpha=0.55, zorder=zorder, linewidth=0)
+    # Set multiplier: 1 for RHB, -1 for LHB
+    m = 1 if is_rhb else -1
+    
+    # Apply multiplier to all boundary values
+    # Original ranges: (-1.0, -0.65), (-0.65, -0.18), (-0.18, 0.18), (0.18, 1.0)
+    ax.axvspan(-1.0 * m, -0.65 * m, facecolor="#ffffcc", alpha=0.25, zorder=zorder, linewidth=0)
+    ax.axvspan(-0.65 * m, -0.18 * m, facecolor="#ffcccc", alpha=0.25, zorder=zorder, linewidth=0)
+    ax.axvspan(-0.18 * m, 0.18 * m, facecolor="#ccffcc", alpha=0.25, zorder=zorder, linewidth=0)
+    ax.axvspan(0.18 * m, 1.0 * m, facecolor="#cce5ff", alpha=0.25, zorder=zorder, linewidth=0)
 
 
 def pitch_bin_percentages(df: pd.DataFrame, pitch_bins: Dict[str, List[float]], bounce_col: str = "BounceX") -> Dict[str, float]:
