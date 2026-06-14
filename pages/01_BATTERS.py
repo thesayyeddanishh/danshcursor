@@ -1136,22 +1136,23 @@ def create_speed_metrics_bar(df_in, delivery_type):
     # Finally, fill any remaining NaNs (0/0 cases) with 0
     summary["Avg"] = summary["Avg"].fillna(0)
 
-    # 4. Plotting - Optimized for Refresh
+    # 4. Plotting - Final Forced Refresh Logic
     bar_color = '#4A90E2'
     text_color = '#333333'
     
-    # Force a fresh figure
-    plt.close('all') 
-    num_groups = len(ordered_groups)
-    fig, axes = plt.subplots(1, 4, figsize=(15, 0.7 * num_groups + 1.5), sharey=True)
+    # Force creation of a unique figure object 
+    # (The 'num' argument ensures it doesn't try to reuse an existing window)
+    fig = plt.figure(figsize=(15, 0.7 * len(ordered_groups) + 1.5))
     fig.patch.set_facecolor('white')
     
-    y = np.arange(num_groups)
+    y = np.arange(len(ordered_groups))
     height = 0.6
-
     metrics = ["Runs", "Dismissals", "Avg", "SR"]
     titles = ["Total Runs", "Dismissals", "Batting Avg", "Strike Rate"]
 
+    # Use add_subplot to build it step-by-step
+    axes = [fig.add_subplot(1, 4, i+1) for i in range(4)]
+    
     for ax, metric, title in zip(axes, metrics, titles):
         ax.set_facecolor('white')
         vals = summary[metric]
@@ -1160,14 +1161,10 @@ def create_speed_metrics_bar(df_in, delivery_type):
         ax.barh(y, vals, color=bar_color, edgecolor='none', height=height, zorder=2)
         ax.set_title(title, fontsize=12, fontweight='bold', color=text_color, pad=12)
         
-        # Adjust label visibility
         max_val = vals.max() if vals.max() > 0 else 1
         for i, v in enumerate(vals):
-            ax.text(
-                v + (max_val * 0.03), i, 
-                f'{v:.0f}' if metric not in ["Avg", "SR"] else f'{v:.1f}',
-                va='center', ha='left', fontsize=10, color=text_color
-            )
+            ax.text(v + (max_val * 0.03), i, f'{v:.0f}' if metric not in ["Avg", "SR"] else f'{v:.1f}',
+                    va='center', ha='left', fontsize=10, color=text_color)
             
         ax.spines[['top', 'right', 'bottom']].set_visible(False)
         ax.spines['left'].set_color('#dddddd')
@@ -1179,8 +1176,7 @@ def create_speed_metrics_bar(df_in, delivery_type):
     axes[0].tick_params(axis='y', length=0)
     
     plt.tight_layout(pad=2.0)
-    fig.canvas.draw() # Force the draw
-    return fig
+    return fig # Streamlit handles the rendering
     
 #----------------------------------------
 # PAGE LAYOUT SETUP
@@ -1481,8 +1477,3 @@ with col2:
     st.markdown("###### METRICS BY RELEASE SPEED v SPIN")
     st.pyplot(create_speed_metrics_bar(df_spin, "Spin"), use_container_width=True)
     
-        # # --- Lower Chart: Release Speed Metrics ---
-        #     st.markdown("###### METRICS BY RELEASE SPEED v SPIN")
-        # # Reuses the speed logic (Pace On vs Slower) for the spinners
-        #     fig_speed_stats_spin = create_speed_metrics_bar(df_death_spin)
-        #     st.pyplot(fig_speed_stats_spin, use_container_width=True)
