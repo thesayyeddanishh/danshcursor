@@ -46,7 +46,7 @@ def create_pacer_pitch_map(df_in):
     pitch_wickets = df_in[df_in["Wicket"] == True]
 
     fig_w, fig_h = pitch_map_figsize(cfg, width=3.0)
-    fig, ax = plt.subplots(figsize=(fig_w, fig_h))
+    fig, ax = plt.subplots(figsize=(3.5, 7))
     ax.set_facecolor("white")
     fig.patch.set_facecolor("white")
 
@@ -59,27 +59,27 @@ def create_pacer_pitch_map(df_in):
         mid_y = (bounds[0] + bounds[1]) / 2
         ax.text(
             x=-1.45,
-            y=mid_y,
+            y=mid_y + y_off,
             s=str(length).upper(),
             ha="left",
             va="center",
             fontsize=8,
-            color="grey",
+            color="black",
             fontweight="bold",
         )
         p = int(pct_by_bin.get(length, 0))
         ax.text(
             x=-1.45,
-            y=mid_y - 0.42,
+            y=mid_y - y_off,
             s=f"{p}%",
             ha="left",
             va="center",
             fontsize=16,
-            color="grey",
+            color="black",
             fontweight="bold",
         )
 
-    s_nw, s_b, s_w = ((60, 60, 90) if cfg.is_test else (100, 100, 150))
+    s_nw, s_b, s_w = ((60, 75, 90) if cfg.is_test else (100, 100, 150))
     if not pitch_others.empty:
         ax.scatter(
             pitch_others["BounceY"],
@@ -114,10 +114,9 @@ def create_pacer_pitch_map(df_in):
             label="Wicket",
         )
 
-    lw = 1.0 if cfg.is_test else 0.5
-    ax.axvline(x=-0.18, color="#777777", linestyle="-", linewidth=lw)
-    ax.axvline(x=0.18, color="#777777", linestyle="-", linewidth=lw)
-    ax.axvline(x=0, color="#777777", linestyle="-", linewidth=lw)
+    ax.axvline(x=-0.18, color="#777777", linestyle="-", linewidth=0.5)
+    ax.axvline(x=0.18, color="#777777", linestyle="-", linewidth=0.5)
+    ax.axvline(x=0, color="#777777", linestyle="-", linewidth=0.5)
 
     ax.set_xlim([-1.5, 1.5])
     ax.set_ylim([16.0, -4.0])
@@ -283,7 +282,7 @@ def create_pacer_pitch_length_bars(df_in):
 # ========================================================
 def create_pacer_crease_beehive(df_in, handedness_label): # Renamed function and parameter
     if df_in.empty:
-        fig, ax = plt.subplots(figsize=(7, 5)); 
+        fig, ax = plt.subplots(figsize=(7, 6)); 
         ax.text(0.5, 0.5, f"No data for Analysis ({handedness_label})", ha='center', va='center', fontsize=12); 
         ax.axis('off'); 
         return fig
@@ -296,10 +295,7 @@ def create_pacer_crease_beehive(df_in, handedness_label): # Renamed function and
     
     # --- Lateral Zone Data Prep (Chart 2b) ---
     df_lateral = df_in.copy()
-    
-    # DETERMINE HANDEDNESS FOR ZONE REVERSAL
-    # If the function is called with a single handedness filter (RHB or LHB), this will be consistent.
-    is_rhb = handedness_label == "RHB" 
+    is_rhb = df_in["IsBatsmanRightHanded"].iloc[0] if not df_in.empty and "IsBatsmanRightHanded" in df_in.columns else True 
 
     def assign_lateral_zone(row):
         y = row["CreaseY"]
@@ -339,8 +335,8 @@ def create_pacer_crease_beehive(df_in, handedness_label): # Renamed function and
 
     # -----------------------------------------------------------
     # --- 1. SETUP SUBPLOTS ---
-    fig = plt.figure(figsize=(7, 5)) 
-    gs = fig.add_gridspec(2, 1, height_ratios=[4, 1], hspace=0.005) 
+    fig = plt.figure(figsize=(7, 6)) 
+    gs = fig.add_gridspec(2, 1, height_ratios=[4, 1], hspace=0.01) 
     ax_bh = fig.add_subplot(gs[0, 0])      
     ax_boxes = fig.add_subplot(gs[1, 0])   
     fig.patch.set_facecolor('white')
@@ -348,7 +344,8 @@ def create_pacer_crease_beehive(df_in, handedness_label): # Renamed function and
 
     # -----------------------------------------------------------
     ## --- 2. CHART 2a: CREASE BEEHIVE (ax_bh) ---
-    add_crease_lateral_zone_background(ax_bh, zorder=0)
+    is_rhb_val = bool(df_seam["IsBatsmanRightHanded"].iloc[0]) if not df_seam.empty else True
+    add_crease_lateral_zone_background(ax_bh, is_rhb=is_rhb, zorder=0)
 
     # --- Traces ---
     ax_bh.scatter(
@@ -357,18 +354,18 @@ def create_pacer_crease_beehive(df_in, handedness_label): # Renamed function and
         s=40,
         c="lightgrey",
         edgecolor="white",
-        linewidths=1.0,
-        alpha=0.95,
+        linewidths=0.5,
+        alpha=1,
         label="Regular Ball",
         zorder=3,
     )
     ax_bh.scatter(
         boundaries["CreaseY"],
         boundaries["CreaseZ"],
-        s=80,
+        s=55,
         c="royalblue",
         edgecolor="white",
-        linewidths=1.0,
+        linewidths=0.0,
         alpha=0.95,
         label="Boundary",
         zorder=4,
@@ -376,10 +373,10 @@ def create_pacer_crease_beehive(df_in, handedness_label): # Renamed function and
     ax_bh.scatter(
         wickets["CreaseY"],
         wickets["CreaseZ"],
-        s=80,
+        s=70,
         c="red",
         edgecolor="white",
-        linewidths=1.0,
+        linewidths=0.0,
         alpha=0.95,
         label="Wicket",
         zorder=5,
@@ -389,17 +386,15 @@ def create_pacer_crease_beehive(df_in, handedness_label): # Renamed function and
     ax_bh.axvline(x=-0.18, color="grey", linestyle="--", linewidth=0.5, zorder=2)
     ax_bh.axvline(x=0.18, color="grey", linestyle="--", linewidth=0.5, zorder=2)
     ax_bh.axvline(x=0, color="grey", linestyle="--", linewidth=0.5, zorder=2)
-    ax_bh.axvline(x=-0.92, color="green", linestyle="--", linewidth=2.2, zorder=2)
-    ax_bh.axvline(x=0.92, color="green", linestyle="--", linewidth=2.2, zorder=2)
-    ax_bh.axhline(y=0.78, color="grey", linestyle="-", linewidth=0.5, zorder=2)
+    ax_bh.axhline(y=0.78, color="grey", linestyle="-", linewidth=0.25, zorder=2)
 
     # --- Annotation ---
-    ax_bh.text(-0.98, 0.78, "Stump line", ha="left", va="bottom", fontsize=8, color="grey", transform=ax_bh.transData)
+    ax_bh.text(-1.5, 0.78, "Stump line", ha="left", va="bottom", fontsize=8, color="grey", transform=ax_bh.transData)
 
     # --- Formatting ---
-    ax_bh.set_xlim([-1, 1])
-    ax_bh.set_ylim([0, 2])
-    ax_bh.set_aspect('equal', adjustable='box')
+    ax_bh.set_xlim([-1.5, 1.5])
+    ax_bh.set_ylim([-0.25, 2])
+    ax_bh.set_aspect('equal', adjustable='datalim')
     ax_bh.set_xticks([]); ax_bh.set_yticks([]); ax_bh.grid(False)
     for spine in ax_bh.spines.values():
         spine.set_visible(False)
