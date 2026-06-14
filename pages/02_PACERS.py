@@ -45,7 +45,6 @@ def create_pacer_pitch_map(df_in):
     pitch_others = nw[~is_boundary]
     pitch_wickets = df_in[df_in["Wicket"] == True]
 
-    fig_w, fig_h = pitch_map_figsize(cfg, width=3.0)
     fig, ax = plt.subplots(figsize=(3.5, 7))
     ax.set_facecolor("white")
     fig.patch.set_facecolor("white")
@@ -99,8 +98,8 @@ def create_pacer_pitch_map(df_in):
             s=s_b,
             c="royalblue",
             edgecolor="white",
-            linewidths=1.0,
-            alpha=0.9,
+            linewidths=0.5,
+            alpha=0.75,
             label="Boundaries",
         )
     if not pitch_wickets.empty:
@@ -110,8 +109,8 @@ def create_pacer_pitch_map(df_in):
             s=s_w,
             c="red",
             edgecolor="white",
-            linewidths=1.0,
-            alpha=0.95,
+            linewidths=0.5,
+            alpha=1,
             label="Wicket",
         )
 
@@ -188,8 +187,8 @@ def create_pacer_pitch_length_bars(df_in):
     )
 
     categories = df_summary.index.tolist()[::-1]
-    fig, axes = plt.subplots(3, 1, figsize=FIG_SIZE, sharey=True)
-    plt.subplots_adjust(hspace=0.4 if cfg.is_test else 0.45)
+    fig, axes = plt.subplots(3, 1, figsize=(3.5,7), sharey=True)
+    plt.subplots_adjust(hspace=10)
 
     if cfg.is_test:
         metrics = ["Wickets", "Avg", "SR"]
