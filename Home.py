@@ -1,6 +1,5 @@
 """
-Consolidated VR Story Assistant — pick format on this page only, then upload data.
-
+Consolidated VR Story Assistant
 Run from this folder:
   streamlit run Home.py
 """
@@ -33,13 +32,13 @@ REQUIRED_COLS = [
     "Over",
 ]
 
-st.set_page_config(layout="wide", page_title="VR Story Assistant")
+st.set_page_config(layout="wide", page_title="VR DANshboard")
 
 st.markdown(
     """
     <style>
     section[data-testid="stSidebar"] {
-        width: 200px !important;
+        width: 150px !important;
     }
     </style>
     """,
@@ -77,7 +76,7 @@ def process_upload(uploaded_file) -> bool:
         return False
 
 
-st.title("VR Story Assistant")
+st.title("VR DANshboard")
 
 st.subheader("1. Select format (choose once per session before analysis)")
 fmt_labels = [FORMAT_LABELS[k] for k in FORMAT_KEYS]
