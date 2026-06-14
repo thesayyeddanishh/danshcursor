@@ -157,7 +157,7 @@ def create_crease_beehive(df_in, delivery_type):
     # --- Formatting ---
     ax_bh.set_xlim([-1.75, 1.75])
     ax_bh.set_ylim([-0.25, 2])
-    ax_bh.set_aspect('equal', adjustable='box')
+    ax_bh.set_aspect('equal', adjustable='datalim')
     ax_bh.set_xticks([]); ax_bh.set_yticks([]); ax_bh.grid(False)
     for spine in ax_bh.spines.values():
         spine.set_visible(False)
