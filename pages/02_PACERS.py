@@ -343,7 +343,7 @@ def create_pacer_crease_beehive(df_in, handedness_label): # Renamed function and
 
     # -----------------------------------------------------------
     ## --- 2. CHART 2a: CREASE BEEHIVE (ax_bh) ---
-    is_rhb_val = bool(df_seam["IsBatsmanRightHanded"].iloc[0]) if not df_seam.empty else True
+    is_rhb_val = bool(df_in["IsBatsmanRightHanded"].iloc[0]) if not df_in.empty else True
     add_crease_lateral_zone_background(ax_bh, is_rhb=is_rhb, zorder=0)
 
     # --- Traces ---
