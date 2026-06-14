@@ -867,7 +867,7 @@ def create_pacer_speed_effectiveness_3col(df_in, handedness_label):
         transform=fig.transFigure,
         clip_on=False,
     )
-    fig.patches.append(border_rect)
+    
 
     return fig
     
