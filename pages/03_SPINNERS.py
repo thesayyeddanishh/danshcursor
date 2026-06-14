@@ -239,9 +239,9 @@ def create_Spinner_pitch_length_bars(df_in):
             elif metric == "Economy":
                 label = f"{val:.1f}"
             elif metric == "SR":
-                label = f"{int(row['Balls'])} B" if wickets == 0 else f"{val:.1f}"
+                label = f"{int(row['Balls'])} Balls" if wickets == 0 else f"{val:.1f}"
             elif metric == "Avg":
-                label = f"{int(row['Runs'])} R" if wickets == 0 else f"{val:.1f}"
+                label = f"{int(row['Runs'])} Runs" if wickets == 0 else f"{val:.1f}"
             else:
                 label = f"{val:.1f}"
 
@@ -697,21 +697,21 @@ def create_spinner_hitting_missing(df_in, handedness_label):
 
     # Points
     ax_map.scatter(df_missing_no_wicket["StumpsY"], df_missing_no_wicket["StumpsZ"],
-                   color='#D3D3D3', s=75, edgecolor='white', linewidth=0.4, alpha=0.8)
+                   color='#D3D3D3', s=100, edgecolor='white', linewidth=0.4, alpha=0.8)
     ax_map.scatter(df_hitting_no_wicket["StumpsY"], df_hitting_no_wicket["StumpsZ"],
-                   color='#3b3b3b', s=85, edgecolor='white', linewidth=0.4, alpha=0.9)
+                   color='#3b3b3b', s=120, edgecolor='white', linewidth=0.4, alpha=0.9)
     ax_map.scatter(df_wicket["StumpsY"], df_wicket["StumpsZ"],
-                   color='red', s=100, edgecolor='white', linewidth=0.6, zorder=25)
+                   color='red', s=140, edgecolor='white', linewidth=0.6, zorder=25)
 
     ax_map.set_xlim(-1.1, 1.1)
     ax_map.set_ylim(0, 1.4)
     ax_map.axis('off')
 
     # Labels
-    ax_map.text(0.74, 1.4, f"Hitting: {hitting_pct:.0f}%",
+    ax_map.text(0.74, 1.4, f"Hitting: {hitting_pct:.0f}%  ",
                 transform=ax_map.transData, ha='right', va='top',
                 fontsize=17, color='#3b3b3b', weight='bold')
-    ax_map.text(1.2, 1.4, f"Missing: {missing_pct:.0f}%",
+    ax_map.text(1.2, 1.4, f"  Missing: {missing_pct:.0f}%",
                 transform=ax_map.transData, ha='right', va='top',
                 fontsize=17, color='#D3D3D3', weight='bold')
 
@@ -753,14 +753,14 @@ def create_spinner_hitting_missing(df_in, handedness_label):
         ax = axes[i]
         bars = ax.barh(y_labels, meta["data"], color=bar_colors, height=0.5)
         ax.invert_yaxis()
-        ax.set_title(meta["title"], fontsize=12, pad=5)
+        ax.set_title(meta["title"], fontsize=18, pad=5)
         ax.set_xlim(0, max_values[metric])
         ax.xaxis.set_visible(False)
 
         if i == 0:
             ax.tick_params(axis='y', length=0)
             ax.set_yticks([0, 1])
-            ax.set_yticklabels(y_labels, fontsize=12, weight='bold')
+            ax.set_yticklabels(y_labels, fontsize=18, weight='bold')
         else:
             ax.yaxis.set_visible(False)
 
@@ -768,7 +768,7 @@ def create_spinner_hitting_missing(df_in, handedness_label):
             text = "N/A" if np.isnan(value) else f"{value:.1f}" if metric != "Wickets" else f"{int(value)}"
             ax.text(bar.get_width() + 0.5,
                     bar.get_y() + bar.get_height() / 2,
-                    text, ha='left', va='center', fontsize=11, weight='bold')
+                    text, ha='left', va='center', fontsize=20, weight='bold')
 
         for spine in ["right", "top", "bottom", "left"]:
             ax.spines[spine].set_visible(False)
