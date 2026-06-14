@@ -75,10 +75,7 @@ def process_upload(uploaded_file) -> bool:
         st.session_state.pop("file_name", None)
         return False
 
-
 st.title("VR DANshboard")
-
-st.subheader("1. Select format")
 fmt_labels = [FORMAT_LABELS[k] for k in FORMAT_KEYS]
 default_key = st.session_state.get("cricket_format", "men_t20i")
 default_idx = FORMAT_KEYS.index(default_key) if default_key in FORMAT_KEYS else 0
@@ -86,8 +83,8 @@ choice = st.selectbox("Format", fmt_labels, index=default_idx, key="format_selec
 st.session_state["cricket_format"] = FORMAT_KEYS[fmt_labels.index(choice)]
 _cfg = resolve_format(st.session_state["cricket_format"])
 
-st.subheader("2. Upload ball-by-ball CSV")
-with st.expander("Required CSV columns"):
+st.subheader("2. Upload CSV")
+with st.expander("Required CSV columns when exporting from CDS"):
     st.markdown(
         """
 * **General:** `Innings`, `Over`, `Ball`, `BowlerName`, `BatsmanName`, `BowlingTeam`, `BattingTeam`
@@ -106,7 +103,8 @@ if uploaded_file is not None:
 
 if "data_df" in st.session_state:
     df_loaded = st.session_state["data_df"]
-    st.info("Data is loaded. Open **Batters**, **Pacers**, **Spinners**, or **Leaderboard** from the sidebar.")
+    st.info("Wait for the next line to turn Blue")
+    st.info("CSV is loaded. Open **Batters**, **Pacers**, **Spinners**, or **Leaderboard** from the sidebar.")
     st.write(f"Total deliveries: {len(df_loaded):,}")
     if st.checkbox("Show first 5 rows"):
         st.write(f"**File:** `{st.session_state.get('file_name', 'N/A')}`")
