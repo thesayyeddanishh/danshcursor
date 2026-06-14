@@ -156,7 +156,7 @@ else:
     # ------------------------------------------------------------------
     # --- SPLIT SCREEN LAYOUT DESIGN ---
     # ------------------------------------------------------------------
-    main_display_col, filter_panel_col = st.columns([6, 2], gap="large")
+    main_display_col, filter_panel_col = st.columns([5.5, 2.5], gap="large")
 
     # Objects to hold our conditional data slice
     df_filtered = pd.DataFrame()
