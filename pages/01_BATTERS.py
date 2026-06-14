@@ -1217,9 +1217,6 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-render_page_nav("batters")
-
-
 
 # =========================================================
 # 💥 1. CRITICAL: GET DATA FROM SESSION STATE
