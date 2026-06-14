@@ -25,9 +25,6 @@ from cricket_config import (
     add_crease_lateral_zone_background,
 )
 
-from page_nav import render_page_nav
-
-
 # =========================================================
 # --- CHART 2: PITCH MAP (BOUNCE LOCATION) ---
 # =========================================================
@@ -56,8 +53,7 @@ def create_Spinner_pitch_map(df_in):
     pitch_others = nw[~is_boundary]
     pitch_wickets = df_in[df_in["Wicket"] == True]
 
-    fig_w, fig_h = pitch_map_figsize(cfg, width=4.0)
-    fig, ax = plt.subplots(figsize=(fig_w, fig_h))
+    fig, ax = plt.subplots(figsize=(3.5, 7))
     ax.set_facecolor("white")
     fig.patch.set_facecolor("white")
 
@@ -66,31 +62,32 @@ def create_Spinner_pitch_map(df_in):
         ax.axhline(y=y_val, color="lightgrey", linewidth=1.0, linestyle="--")
 
     pct_by_bin = pitch_bin_percentages(df_in, PITCH_BINS, bounce_col="BounceX")
+    y_off = 0.2
     for length, bounds in PITCH_BINS.items():
         mid_y = (bounds[0] + bounds[1]) / 2
         ax.text(
             x=-1.45,
-            y=mid_y,
+            y=mid_y + y_off,
             s=str(length).upper(),
             ha="left",
             va="center",
             fontsize=8,
-            color="grey",
+            color="black",
             fontweight="bold",
         )
         p = int(pct_by_bin.get(length, 0))
         ax.text(
             x=-1.45,
-            y=mid_y - 0.22,
+            y=mid_y - y_off,
             s=f"{p}%",
             ha="left",
             va="center",
             fontsize=16,
-            color="grey",
+            color="black",
             fontweight="bold",
         )
 
-    s_nw, s_b, s_w = ((60, 60, 90) if cfg.is_test else (100, 100, 150))
+    s_nw, s_b, s_w = ((60, 75, 90) if cfg.is_test else (100, 100, 150))
     if not pitch_others.empty:
         ax.scatter(
             pitch_others["BounceY"],
@@ -109,8 +106,8 @@ def create_Spinner_pitch_map(df_in):
             s=s_b,
             c="royalblue",
             edgecolor="white",
-            linewidths=1.0,
-            alpha=0.9,
+            linewidths=0.5,
+            alpha=0.75,
             label="Boundaries",
         )
     if not pitch_wickets.empty:
@@ -120,15 +117,14 @@ def create_Spinner_pitch_map(df_in):
             s=s_w,
             c="red",
             edgecolor="white",
-            linewidths=1.0,
-            alpha=0.95,
+            linewidths=0.5,
+            alpha=1,
             label="Wicket",
         )
 
-    lw = 1.0 if cfg.is_test else 0.5
-    ax.axvline(x=-0.18, color="#777777", linestyle="-", linewidth=lw)
-    ax.axvline(x=0.18, color="#777777", linestyle="-", linewidth=lw)
-    ax.axvline(x=0, color="#777777", linestyle="-", linewidth=lw)
+    ax.axvline(x=-0.18, color="#777777", linestyle="-", linewidth=0.5)
+    ax.axvline(x=0.18, color="#777777", linestyle="-", linewidth=0.5)
+    ax.axvline(x=0, color="#777777", linestyle="-", linewidth=0.5)
 
     ax.set_xlim([-1.5, 1.5])
     ax.set_ylim([10.0, 0])
@@ -194,8 +190,8 @@ def create_Spinner_pitch_length_bars(df_in):
     )
 
     categories = df_summary.index.tolist()[::-1]
-    fig, axes = plt.subplots(3, 1, figsize=FIG_SIZE, sharey=True)
-    plt.subplots_adjust(hspace=0.4 if cfg.is_test else 0.45)
+    fig, axes = plt.subplots(3, 1, figsize=(3.5,7), sharey=True)
+    plt.subplots_adjust(hspace=10)
 
     if cfg.is_test:
         metrics = ["Wickets", "Avg", "SR"]
@@ -305,10 +301,7 @@ def create_Spinner_crease_beehive(df_in, handedness_label): # Renamed function a
     
     # --- Lateral Zone Data Prep (Chart 2b) ---
     df_lateral = df_in.copy()
-    
-    # DETERMINE HANDEDNESS FOR ZONE REVERSAL
-    # If the function is called with a single handedness filter (RHB or LHB), this will be consistent.
-    is_rhb = handedness_label == "RHB" 
+    is_rhb = df_in["IsBatsmanRightHanded"].iloc[0] if not df_in.empty and "IsBatsmanRightHanded" in df_in.columns else True
 
     def assign_lateral_zone(row):
         y = row["CreaseY"]
@@ -335,45 +328,51 @@ def create_Spinner_crease_beehive(df_in, handedness_label): # Renamed function a
     
     # 1. Define standard zone order (WOO to LEG)
     ordered_zones_base = ["WAY OUTSIDE OFF", "OUTSIDE OFF", "STUMPS", "LEG"]
-    
-    # 2. HANDEDNESS AWARE REVERSAL: Reverse order for LHB for visual consistency
     ordered_zones = ordered_zones_base if is_rhb else ordered_zones_base[::-1]
-    
     summary = summary.reindex(ordered_zones).fillna(0)
     
     # BOWLING Metrics
     # summary["Avg Runs/Wicket"] = summary.apply(lambda row: row["Runs"] / row["Wickets"] if row["Wickets"] > 0 else np.nan, axis=1)
     summary["Economy"] = summary.apply(lambda row: (row["Runs"] / row["Balls"]) * 6 if row["Balls"] > 0 else np.nan, axis=1)
 
+    # 3. HANDEDNESS AWARE REVERSAL: Reverse order for LHB
+    if not is_rhb:
+        # Reverses the DataFrame for LHB (LEG, STUMPS, OUTSIDE OFF, WAY OUTSIDE OFF)
+        summary = summary.iloc[::-1]
+        
     # -----------------------------------------------------------
     # --- 1. SETUP SUBPLOTS ---
-    fig = plt.figure(figsize=(7, 5)) 
-    gs = fig.add_gridspec(2, 1, height_ratios=[4, 1], hspace=0.005) 
+    fig = plt.figure(figsize=(7, 6)) 
+    gs = fig.add_gridspec(2, 1, height_ratios=[4, 1], hspace=0.01) 
     ax_bh = fig.add_subplot(gs[0, 0])      
     ax_boxes = fig.add_subplot(gs[1, 0])   
     fig.patch.set_facecolor('white')
 
     
-    # --- Traces ---
-    add_crease_lateral_zone_background(ax_bh, zorder=0)
+    # -----------------------------------------------------------
+    ## --- 2. CHART 2a: CREASE BEEHIVE (ax_bh) ---
+    is_rhb_val = bool(df_in["IsBatsmanRightHanded"].iloc[0]) if not df_in.empty else True
+    add_crease_lateral_zone_background(ax_bh, is_rhb=is_rhb, zorder=0)
+
+    #----Traces----
     ax_bh.scatter(
         regular_balls["CreaseY"],
         regular_balls["CreaseZ"],
         s=40,
         c="lightgrey",
         edgecolor="white",
-        linewidths=1.0,
-        alpha=0.95,
+        linewidths=0.5,
+        alpha=1,
         label="Regular Ball",
         zorder=3,
     )
     ax_bh.scatter(
         boundaries["CreaseY"],
         boundaries["CreaseZ"],
-        s=80,
+        s=55,
         c="royalblue",
         edgecolor="white",
-        linewidths=1.0,
+        linewidths=0.0,
         alpha=0.95,
         label="Boundary",
         zorder=4,
@@ -381,10 +380,10 @@ def create_Spinner_crease_beehive(df_in, handedness_label): # Renamed function a
     ax_bh.scatter(
         wickets["CreaseY"],
         wickets["CreaseZ"],
-        s=80,
+        s=70,
         c="red",
         edgecolor="white",
-        linewidths=1.0,
+        linewidths=0.0,
         alpha=0.95,
         label="Wicket",
         zorder=5,
@@ -394,17 +393,15 @@ def create_Spinner_crease_beehive(df_in, handedness_label): # Renamed function a
     ax_bh.axvline(x=-0.18, color="grey", linestyle="--", linewidth=0.5, zorder=2)
     ax_bh.axvline(x=0.18, color="grey", linestyle="--", linewidth=0.5, zorder=2)
     ax_bh.axvline(x=0, color="grey", linestyle="--", linewidth=0.5, zorder=2)
-    ax_bh.axvline(x=-0.92, color="green", linestyle="--", linewidth=2.2, zorder=2)
-    ax_bh.axvline(x=0.92, color="green", linestyle="--", linewidth=2.2, zorder=2)
-    ax_bh.axhline(y=0.78, color="grey", linestyle="-", linewidth=0.5, zorder=2)
+    ax_bh.axhline(y=0.78, color="grey", linestyle="-", linewidth=0.25, zorder=2)
 
     # --- Annotation ---
-    ax_bh.text(-0.98, 0.78, "Stump line", ha="left", va="bottom", fontsize=8, color="grey", transform=ax_bh.transData)
+    ax_bh.text(-1.5, 0.78, "Stump line", ha="left", va="bottom", fontsize=8, color="grey", transform=ax_bh.transData)
     
     # --- Formatting ---
-    ax_bh.set_xlim([-1, 1])
-    ax_bh.set_ylim([0, 2])
-    ax_bh.set_aspect('equal', adjustable='box')
+    ax_bh.set_xlim([-1.5, 1.5])
+    ax_bh.set_ylim([-0.25, 2])
+    ax_bh.set_aspect('equal', adjustable='datalim')
     ax_bh.set_xticks([]); ax_bh.set_yticks([]); ax_bh.grid(False)
     for spine in ax_bh.spines.values():
         spine.set_visible(False)
@@ -952,7 +949,6 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-render_page_nav("spinners")
 
 # 1. CRITICAL: GET DATA AND CHECK FOR AVAILABILITY
 if 'data_df' not in st.session_state:
@@ -962,22 +958,10 @@ if 'data_df' not in st.session_state:
 df_raw = st.session_state['data_df']
 _cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
 
-col_title_space, col_file, col_format_banner, col_legend = st.columns([2.6, 1.5, 2.8, 2.1])
+col_title_space, col_format_banner, col_legend = st.columns([2.5, 2.5, 5])
 
 with col_title_space:
     st.title("SPINNERS")
-
-with col_file:
-    file_name = st.session_state.get("file_name", "N/A")
-    st.markdown(
-        f"""
-        <div style='margin-top: 35px; text-align: right;'>
-            <span style='color: grey; font-size: 14px;'>File: </span>
-            <code style='font-size: 14px;'>{file_name}</code>
-        </div>
-    """,
-        unsafe_allow_html=True,
-    )
 
 with col_format_banner:
     st.markdown(
@@ -987,10 +971,10 @@ with col_format_banner:
 
 with col_legend:
     legend_markdown = """
-    <p style='font-size: 16px; margin-top: 30px; text-align: right;'>
-        <span style='color: red; font-size: 20px;'>&#9679;</span> Wickets &nbsp;&nbsp;&nbsp;
-        <span style='color: royalblue; font-size: 20px;'>&#9679;</span> Boundaries &nbsp;&nbsp;&nbsp;
-        <span style='color: lightgrey; font-size: 20px;'>&#9679;</span> Others
+    <p style='font-size: 20px; margin-top: 40px; text-align: right;'>
+        <span style='color: red; font-size: 25px;'>&#9679;</span> Wickets &nbsp;&nbsp;&nbsp;
+        <span style='color: royalblue; font-size: 25px;'>&#9679;</span> Boundaries &nbsp;&nbsp;&nbsp;
+        <span style='color: lightgrey; font-size: 25px;'>&#9679;</span> Others
     </p>
     """
     st.markdown(legend_markdown, unsafe_allow_html=True)
@@ -1006,37 +990,55 @@ if "BowlerName" in df_raw.columns:
 df_spin_base = df_raw[df_raw["DeliveryType"] == "Spin"]
 
 # --- Prepare Initial Filter Options ---
-if "BowlingTeam" in df_spin_base.columns:
-    team_column = "BowlingTeam"
-else:
-    team_column = "BattingTeam" 
-    st.warning("The 'BowlingTeam' column was not found. Displaying all Batting Teams as a fallback.")
+def handle_all_selection(key):
+    """Ensures 'All' behaves cleanly with specific options."""
+    selected = st.session_state[key]
+    if len(selected) == 0:
+        st.session_state[key] = ["All"]
+    elif "All" in selected and len(selected) > 1:
+        if selected[-1] == "All":
+            st.session_state[key] = ["All"]
+        else:
+            st.session_state[key] = [x for x in selected if x != "All"]
 
-# 3. FILTERS — multiselect ("All" = no filter)
 def _multiselect_is_all(sel):
     return sel is None or len(sel) == 0 or "All" in sel
 
 
-all_teams = ["All"] + sorted(df_spin_base[team_column].dropna().unique().tolist())
+all_teams = ["All"] + sorted(df_seam_base["BowlingTeam"].dropna().unique().tolist())
 
 row1 = st.columns(4)
 with row1[0]:
-    bowl_team_sel = st.multiselect("Bowling Team", all_teams, default=["All"])
+    bowl_team_sel = st.multiselect(
+        "Bowling Team", 
+        all_teams, 
+        default=["All"],
+        key="team_filter",
+        on_change=handle_all_selection,
+        args=("team_filter",)
+    )
 
+# 2. Dynamically filter batsmen options based on chosen team
 if _multiselect_is_all(bowl_team_sel):
-    df_for_bowlers = df_spin_base.copy()
+    df_bat_opts = df_raw
 else:
     teams_only = [t for t in bowl_team_sel if t != "All"]
-    df_for_bowlers = df_spin_base[df_spin_base[team_column].isin(teams_only)]
+    df_bat_opts = df_raw[df_raw["BowlingTeam"].isin(teams_only)]
 
-if "BowlerName" in df_for_bowlers.columns:
-    relative_bowlers = ["All"] + sorted(df_for_bowlers["BowlerName"].dropna().unique().tolist())
-else:
-    relative_bowlers = ["All"]
+# This defines the variable that was throwing the NameError
+bowler_options = ["All"] + sorted(df_bat_opts["BowlerName"].dropna().unique().tolist())
 
 with row1[1]:
-    bowler_sel = st.multiselect("Bowler Name", relative_bowlers, default=["All"])
+    bowler_sel = st.multiselect(
+        "Bowler Name", 
+        bowler_options, 
+        default=["All"],
+        key="batter_filter",
+        on_change=handle_all_selection,
+        args=("batter_filter",)
+    )
 
+# 3. Safely locate remaining data columns
 year_col = next((c for c in df_raw.columns if c.strip().lower() == "year"), None)
 ground_col = next((c for c in df_raw.columns if c.strip().lower() == "ground"), None)
 tour_col = next((c for c in df_raw.columns if c.strip().lower() == "tour"), None)
@@ -1045,7 +1047,14 @@ match_col = next((c for c in df_raw.columns if c.strip().lower() == "match"), No
 with row1[2]:
     if year_col:
         year_vals = sorted(df_raw[year_col].dropna().unique().astype(int).astype(str).tolist())
-        selected_years = st.multiselect("Year", ["All"] + year_vals, default=["All"])
+        selected_years = st.multiselect(
+            "Year", 
+            ["All"] + year_vals, 
+            default=["All"],
+            key="year_filter",
+            on_change=handle_all_selection,
+            args=("year_filter",)
+        )
     else:
         selected_years = ["All"]
         st.info("Year N/A")
@@ -1053,16 +1062,31 @@ with row1[2]:
 with row1[3]:
     if ground_col:
         venue_vals = sorted(df_raw[ground_col].dropna().unique().tolist())
-        selected_venues = st.multiselect("Venue", ["All"] + venue_vals, default=["All"])
+        selected_venues = st.multiselect(
+            "Venue", 
+            ["All"] + venue_vals, 
+            default=["All"],
+            key="venue_filter",
+            on_change=handle_all_selection,
+            args=("venue_filter",)
+        )
     else:
         selected_venues = ["All"]
         st.info("Venue N/A")
 
 row2 = st.columns(2)
+
 with row2[0]:
     if tour_col:
         tour_vals = sorted(df_raw[tour_col].dropna().astype(str).unique().tolist())
-        selected_tours = st.multiselect("Tour", ["All"] + tour_vals, default=["All"])
+        selected_tours = st.multiselect(
+            "Tour", 
+            ["All"] + tour_vals, 
+            default=["All"],
+            key="tour_filter",
+            on_change=handle_all_selection,
+            args=("tour_filter",)
+        )
     else:
         selected_tours = ["All"]
         st.caption("Tour N/A")
@@ -1070,21 +1094,18 @@ with row2[0]:
 with row2[1]:
     if match_col:
         match_vals = sorted(df_raw[match_col].dropna().astype(str).unique().tolist())
-        selected_matches = st.multiselect("Match", ["All"] + match_vals, default=["All"])
+        selected_matches = st.multiselect(
+            "Match", 
+            ["All"] + match_vals, 
+            default=["All"],
+            key="match_filter",
+            on_change=handle_all_selection,
+            args=("match_filter",)
+        )
     else:
         selected_matches = ["All"]
         st.caption("Match N/A")
 
-if _multiselect_is_all(bowler_sel):
-    heading_bowler = "ALL"
-else:
-    names = [b for b in bowler_sel if b != "All"]
-    heading_bowler = " + ".join(names) if names else "ALL"
-
-st.markdown(
-    f"<h3 style='color: #ff5000;'><b>{heading_bowler}</b></h3>",
-    unsafe_allow_html=True,
-)
 
 # 4. Apply Filters to the Base spin Data
 df_filtered = df_spin_base.copy()
