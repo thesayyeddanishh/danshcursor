@@ -29,8 +29,6 @@ from cricket_config import (
     add_crease_lateral_zone_background,
 )
 
-from page_nav import render_page_nav
-
 # --- 1. GLOBAL UTILITY FUNCTIONS ---
 
 # Required columns check
@@ -1237,7 +1235,7 @@ if 'data_df' not in st.session_state:
 df_raw = st.session_state['data_df']
 _cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
 # Header: wide title | file | format (right) | legend
-col_title_space, col_file, col_format_banner, col_legend = st.columns([2.6, 1.5, 2.8, 2.1])
+col_title_space, col_file, col_format_banner, col_legend = st.columns([2, 1.5, 2.8, 2.1])
 
 with col_title_space:
     st.title("BATTERS")
