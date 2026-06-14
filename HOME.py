@@ -46,9 +46,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-render_page_nav("home")
-
-
 def process_upload(uploaded_file) -> bool:
     if uploaded_file is None:
         return False
