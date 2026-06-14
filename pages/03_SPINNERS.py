@@ -1108,38 +1108,36 @@ with row2[1]:
 
 
 # 4. Apply Filters to the Base spin Data
-def apply_filters(df):
-    df_filtered = df.copy()
+df_filtered = df_seam_base.copy()
 
-    if not _multiselect_is_all(bowl_team_sel):
+if not _multiselect_is_all(bowl_team_sel):
         teams_only = [t for t in bowl_team_sel if t != "All"]
         df_filtered = df_filtered[df_filtered["BowlingTeam"].isin(teams_only)]
 
-    if not _multiselect_is_all(batsman_sel):
+if not _multiselect_is_all(batsman_sel):
         bowls = [b for b in bowler_sel if b != "All"]
         df_filtered = df_filtered[df_filtered["BowlerName"].isin(bowls)]
 
-    yc = next((c for c in df_filtered.columns if c.strip().lower() == "year"), None)
-    if yc and not _multiselect_is_all(selected_years):
+yc = next((c for c in df_filtered.columns if c.strip().lower() == "year"), None)
+if yc and not _multiselect_is_all(selected_years):
         years = [int(y) for y in selected_years if y != "All"]
         df_filtered = df_filtered[df_filtered[yc].astype(int).isin(years)]
 
-    gc = next((c for c in df_filtered.columns if c.strip().lower() == "ground"), None)
-    if gc and not _multiselect_is_all(selected_venues):
+gc = next((c for c in df_filtered.columns if c.strip().lower() == "ground"), None)
+if gc and not _multiselect_is_all(selected_venues):
         venues = [v for v in selected_venues if v != "All"]
         df_filtered = df_filtered[df_filtered[gc].isin(venues)]
 
-    tc = next((c for c in df_filtered.columns if c.strip().lower() == "tour"), None)
-    if tc and not _multiselect_is_all(selected_tours):
+tc = next((c for c in df_filtered.columns if c.strip().lower() == "tour"), None)
+if tc and not _multiselect_is_all(selected_tours):
         tours = [t for t in selected_tours if t != "All"]
         df_filtered = df_filtered[df_filtered[tc].astype(str).isin(tours)]
 
-    mc = next((c for c in df_filtered.columns if c.strip().lower() == "match"), None)
-    if mc and not _multiselect_is_all(selected_matches):
+mc = next((c for c in df_filtered.columns if c.strip().lower() == "match"), None)
+if mc and not _multiselect_is_all(selected_matches):
         matches = [m for m in selected_matches if m != "All"]
         df_filtered = df_filtered[df_filtered[mc].astype(str).isin(matches)]
 
-    return df_filtered
 
 if _multiselect_is_all(bowler_sel):
     heading_text = "ALL"
