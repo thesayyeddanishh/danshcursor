@@ -85,8 +85,8 @@ default_idx = FORMAT_KEYS.index(default_key) if default_key in FORMAT_KEYS else 
 choice = st.selectbox("Format", fmt_labels, index=default_idx, key="format_select_main")
 st.session_state["cricket_format"] = FORMAT_KEYS[fmt_labels.index(choice)]
 _cfg = resolve_format(st.session_state["cricket_format"])
-st.caption(f"Active: {_cfg.label}")
 
+st.subheader("2. Upload ball-by-ball CSV")
 with st.expander("Required CSV columns"):
     st.markdown(
         """
@@ -98,8 +98,6 @@ with st.expander("Required CSV columns"):
 * **Match:** `Ground`, `Tour`, `Year`, `Match`
         """
     )
-
-st.subheader("2. Upload ball-by-ball CSV")
 uploaded_file = st.file_uploader("Upload your CSV file here", type=["csv"], key="main_uploader")
 
 if uploaded_file is not None:
