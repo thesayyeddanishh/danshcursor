@@ -112,7 +112,7 @@ def create_crease_beehive(df_in, delivery_type):
         regular_balls["CreaseY"],
         regular_balls["CreaseZ"],
         s=40,
-        c="lightgrey",
+        c="white",
         edgecolor="white",
         linewidths=0.25,
         alpha=1,
