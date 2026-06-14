@@ -45,16 +45,14 @@ def resolve_format(key: Optional[str]) -> FormatConfig:
     k = (key or "men_t20i").strip()
     if k not in FORMAT_KEYS:
         k = "men_t20i"
-    
-    # Update this line to include the new key
-    is_test = k in ["men_test", "men_test_aus"] 
+
+    is_test = k in ("men_test", "men_test_aus")
     is_womens = k.startswith("women_")
     is_odi = k.endswith("_odi")
     
     if is_test:
-        # You can differentiate titles here if needed
         title = "Men's (AUS)" if k == "men_test_aus" else "Men's"
-        sub = "Red Ball (Test)"
+        sub = "Red Ball (Test — AUS bins)" if k == "men_test_aus" else "Red Ball (Test)"
     elif is_womens:
         title, sub = ("Women's", "ODI") if is_odi else ("Women's", "T20I")
     else:
@@ -106,7 +104,7 @@ def apply_match_phase_filter(df: pd.DataFrame, phase: str, cfg: FormatConfig) ->
     if cfg.is_odi:
         if phase == "Powerplay (1-10)":
             d = d[d["_over_num"] < 11]
-        elif phase == "Middle (7-40)":
+        elif phase == "Middle (11-40)":
             d = d[(d["_over_num"] >= 11) & (d["_over_num"] < 41)]
         elif phase == "Death (41-50)":
             d = d[(d["_over_num"] >= 41) & (d["_over_num"] < 50)]
@@ -294,6 +292,18 @@ def filter_batter_length(df: pd.DataFrame, f3: str, cfg: FormatConfig) -> pd.Dat
     if f3 == "All":
         return df.copy()
     bx = df["BounceX"]
+    # Men's Test (AUS) must come before generic is_test — both have is_test=True.
+    if cfg.key == "men_test_aus":
+        if f3 == "FULL":
+            return df[bx < 5.0].copy()
+        if f3 == "LENGTH":
+            return df[(bx >= 5.0) & (bx < 7.0)].copy()
+        if f3 == "SHORT":
+            return df[(bx >= 7.0) & (bx < 10.0)].copy()
+        if f3 == "BOUNCER":
+            return df[bx >= 10.0].copy()
+        return df.copy()
+
     if cfg.is_test:
         if f3 == "FULL":
             return df[bx < 5.8].copy()
@@ -305,13 +315,6 @@ def filter_batter_length(df: pd.DataFrame, f3: str, cfg: FormatConfig) -> pd.Dat
             return df[bx >= 10.0].copy()
         return df.copy()
 
-    if cfg.key == "men_test_aus":
-        if f3 == "FULL": return df[bx < 5.0].copy()
-        if f3 == "LENGTH": return df[(bx >= 5.0) & (bx < 7.0)].copy()
-        if f3 == "SHORT": return df[(bx >= 7.0) & (bx < 10.0)].copy()
-        if f3 == "BOUNCER": return df[bx >= 10.0].copy()
-        return df.copy()
-  
     if cfg.is_womens:
         if f3 == "FULL TOSS":
             return df[bx < 0.9].copy()
@@ -389,16 +392,36 @@ def filter_pacer_pace(df: pd.DataFrame, f3: str, cfg: FormatConfig) -> pd.DataFr
     return filter_batter_pace(df, f3, cfg)
 
 
+PACERS_METRIC_VIEW_TYPES: Tuple[str, ...] = (
+    "Avg Speed",
+    "Avg Swing",
+    "Avg Seam",
+    "Avg Length",
+    "Hitting Stumps %",
+)
+
+SPINNERS_METRIC_VIEW_TYPES: Tuple[str, ...] = (
+    "Avg Speed",
+    "Avg Drift",
+    "Avg Turn",
+    "Avg Length",
+    "Hitting Stumps %",
+)
+
+
 def pacer_view_types(cfg: FormatConfig) -> List[str]:
-    if cfg.is_test:
-        return [
+    base = (
+        [
             "All",
             "Bowling Strike Rate By Length",
             "% by Lengths",
             "Bowling Average by Pace",
             "% Balls by Pace",
         ]
-    return ["All", "Economy By Length", "% by Lengths", "Economy by Pace", "% Balls by Pace"]
+        if cfg.is_test
+        else ["All", "Economy By Length", "% by Lengths", "Economy by Pace", "% Balls by Pace"]
+    )
+    return list(base) + list(PACERS_METRIC_VIEW_TYPES)
 
 
 def batter_sr_or_avg_label(cfg: FormatConfig) -> str:
@@ -415,6 +438,71 @@ def pacer_length_filter_options(cfg: FormatConfig) -> List[str]:
 
 
 def spinner_view_types(cfg: FormatConfig) -> List[str]:
-    if cfg.is_test:
-        return ["All", "Bowling Strike Rate By Length", "% by Lengths", "% /Turn (TURN)"]
-    return ["All", "Economy By Length", "% by Lengths", "% /Turn (TURN)"]
+    base = (
+        ["All", "Bowling Strike Rate By Length", "% by Lengths", "% /Turn (TURN)"]
+        if cfg.is_test
+        else ["All", "Economy By Length", "% by Lengths", "% /Turn (TURN)"]
+    )
+    return base + list(SPINNERS_METRIC_VIEW_TYPES)
+
+
+# --- Page header / pitch-map helpers ---
+
+def format_banner_caps(cfg: FormatConfig) -> str:
+    """Bold caps line for active format (e.g. MEN'S T20I)."""
+    return cfg.label.upper()
+
+
+# HTML/CSS for orange caps banner (right-aligned; +2pt vs base 1.05rem)
+FORMAT_BANNER_STYLE = "color:#ff6600;font-size:calc(1.05rem + 2pt);font-weight:700;"
+
+
+def pitch_map_figsize(cfg: FormatConfig, width: float = 3.0) -> Tuple[float, float]:
+    """Match pitch scatter height to pitch-length bar charts (test vs white-ball)."""
+    h = 6.0 if cfg.is_test else 4.7
+    return (width, h)
+
+
+def add_crease_lateral_zone_background(ax, zorder: int = 0) -> None:
+    """
+    Vertical bands on crease beehive where x = CreaseY (RHB zone boundaries).
+    Way Outside Off | Outside Off | Stumps | Leg
+    """
+    ax.axvspan(-1.0, -0.65, facecolor="#ffffcc", alpha=0.55, zorder=zorder, linewidth=0)
+    ax.axvspan(-0.65, -0.18, facecolor="#ffcccc", alpha=0.55, zorder=zorder, linewidth=0)
+    ax.axvspan(-0.18, 0.18, facecolor="#ccffcc", alpha=0.55, zorder=zorder, linewidth=0)
+    ax.axvspan(0.18, 1.0, facecolor="#cce5ff", alpha=0.55, zorder=zorder, linewidth=0)
+
+
+def pitch_bin_percentages(df: pd.DataFrame, pitch_bins: Dict[str, List[float]], bounce_col: str = "BounceX") -> Dict[str, float]:
+    """Percent of rows in each bin (same half-open bounds as pitch charts)."""
+    if df is None or df.empty or not pitch_bins:
+        return {k: 0.0 for k in pitch_bins}
+    bx = pd.to_numeric(df[bounce_col], errors="coerce")
+    valid = bx.notna()
+    total = int(valid.sum())
+    if total == 0:
+        return {k: 0.0 for k in pitch_bins}
+    out: Dict[str, float] = {}
+    for name, bounds in pitch_bins.items():
+        lo, hi = float(bounds[0]), float(bounds[1])
+        cnt = int(((bx >= lo) & (bx < hi) & valid).sum())
+        out[name] = round(100.0 * cnt / total, 0)
+    return out
+
+
+def hitting_stumps_mask(df: pd.DataFrame) -> pd.Series:
+    """Same geometry as Spinners 'Hitting/Missing' chart (stump channel)."""
+    if df is None or df.empty:
+        return pd.Series(dtype=bool)
+    need = {"StumpsY", "StumpsZ"}
+    if not need.issubset(df.columns):
+        return pd.Series(False, index=df.index)
+    sy = pd.to_numeric(df["StumpsY"], errors="coerce")
+    sz = pd.to_numeric(df["StumpsZ"], errors="coerce")
+    return (
+        (sy >= -0.18)
+        & (sy <= 0.18)
+        & (sz >= 0)
+        & (sz <= 0.72)
+    ).fillna(False)

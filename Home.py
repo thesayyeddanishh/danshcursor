@@ -1,0 +1,115 @@
+"""
+Consolidated VR Story Assistant
+Run from this folder:
+  streamlit run Home.py
+"""
+from __future__ import annotations
+
+import streamlit as st
+import pandas as pd
+from io import StringIO
+
+from cricket_config import FORMAT_KEYS, FORMAT_LABELS, resolve_format
+from page_nav import render_page_nav
+
+REQUIRED_COLS = [
+    "BatsmanName",
+    "DeliveryType",
+    "Wicket",
+    "StumpsY",
+    "StumpsZ",
+    "BattingTeam",
+    "CreaseY",
+    "CreaseZ",
+    "Runs",
+    "IsBatsmanRightHanded",
+    "LandingX",
+    "LandingY",
+    "BounceX",
+    "BounceY",
+    "InterceptionX",
+    "InterceptionZ",
+    "InterceptionY",
+    "Over",
+]
+
+st.set_page_config(layout="wide", page_title="VR DANshboard")
+
+st.markdown(
+    """
+    <style>
+    section[data-testid="stSidebar"] {
+        width: 200px !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+render_page_nav("home")
+
+
+def process_upload(uploaded_file) -> bool:
+    if uploaded_file is None:
+        return False
+    try:
+        data = uploaded_file.getvalue().decode("utf-8")
+        df_raw = pd.read_csv(StringIO(data))
+        if not all(col in df_raw.columns for col in REQUIRED_COLS):
+            missing = [c for c in REQUIRED_COLS if c not in df_raw.columns]
+            st.error(f"The CSV file is missing required columns: {', '.join(missing)}")
+            st.session_state.pop("data_df", None)
+            st.session_state.pop("file_name", None)
+            return False
+        st.session_state["data_df"] = df_raw
+        st.session_state["file_name"] = uploaded_file.name
+        if "initial_load_complete" in st.session_state:
+            st.success(f"Data successfully replaced!\n Total deliveries loaded: {len(df_raw):,}.")
+        else:
+            st.session_state["initial_load_complete"] = True
+            st.success(
+                f"Data uploaded successfully! File: {uploaded_file.name}. "
+                "Use the sidebar pages: Batters, Pacers, Spinners, Leaderboard."
+            )
+        return True
+    except Exception as e:
+        st.error(f"Error reading file: {e}")
+        st.session_state.pop("data_df", None)
+        st.session_state.pop("file_name", None)
+        return False
+
+st.title("VR DANshboard")
+fmt_labels = [FORMAT_LABELS[k] for k in FORMAT_KEYS]
+default_key = st.session_state.get("cricket_format", "men_t20i")
+default_idx = FORMAT_KEYS.index(default_key) if default_key in FORMAT_KEYS else 0
+choice = st.selectbox("Format", fmt_labels, index=default_idx, key="format_select_main")
+st.session_state["cricket_format"] = FORMAT_KEYS[fmt_labels.index(choice)]
+_cfg = resolve_format(st.session_state["cricket_format"])
+
+st.subheader("2. Upload CSV")
+with st.expander("Required CSV columns when exporting from CDS"):
+    st.markdown(
+        """
+* **General:** `Innings`, `Over`, `Ball`, `BowlerName`, `BatsmanName`, `BowlingTeam`, `BattingTeam`
+* **Handedness:** `IsBowlerRightHanded`, `IsBatsmanRightHanded`
+* **Results:** `Wicket`, `Runs`
+* **Coordinates:** `Bounce X Y`, `Interception X Y Z`, `Crease Y Z`, `Stumps Y Z`, `Release Y Z`, `Landing X Y`
+* **Delivery:** `DeliveryType`, `ReleaseSpeed`, `Deviation`, `Swing`
+* **Match:** `Ground`, `Tour`, `Year`, `Match`
+        """
+    )
+uploaded_file = st.file_uploader("Upload your CSV file here", type=["csv"], key="main_uploader")
+
+if uploaded_file is not None:
+    if "data_df" not in st.session_state or uploaded_file.name != st.session_state.get("file_name"):
+        process_upload(uploaded_file)
+      
+st.write("Wait for the next line to turn blue after uploading")
+
+if "data_df" in st.session_state:
+    df_loaded = st.session_state["data_df"]
+    st.info("CSV is loaded. Open **Batters**, **Pacers**, **Spinners**, or **Leaderboard** from the sidebar.")
+    st.write(f"Total deliveries: {len(df_loaded):,}")
+    if st.checkbox("Show first 5 rows"):
+        st.write(f"**File:** `{st.session_state.get('file_name', 'N/A')}`")
+        st.dataframe(df_loaded.head())
