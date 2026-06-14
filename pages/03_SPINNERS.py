@@ -760,7 +760,7 @@ def create_spinner_hitting_missing(df_in, handedness_label):
         if i == 0:
             ax.tick_params(axis='y', length=0)
             ax.set_yticks([0, 1])
-            ax.set_yticklabels(y_labels, fontsize=18, pad=5)
+            ax.set_yticklabels(y_labels, fontsize=18)
         else:
             ax.yaxis.set_visible(False)
 
