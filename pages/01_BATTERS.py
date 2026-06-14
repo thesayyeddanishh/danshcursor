@@ -1239,16 +1239,16 @@ with col_title_space:
 
 with col_format_banner:
     st.markdown(
-        f'<div style="margin-top: 28px; text-align: left; width: 100%;"><span style="{FORMAT_BANNER_STYLE}">{format_banner_caps(_cfg)}</span></div>',
+        f'<div style="margin-top: 38px; text-align: left; width: 100%;"><span style="{FORMAT_BANNER_STYLE}">{format_banner_caps(_cfg)}</span></div>',
         unsafe_allow_html=True,
     )
 
 with col_legend:
     legend_markdown = """
-    <p style='font-size: 16px; margin-top: 30px; text-align: right;'>
-        <span style='color: red; font-size: 20px;'>&#9679;</span> Wickets &nbsp;&nbsp;&nbsp;
-        <span style='color: royalblue; font-size: 20px;'>&#9679;</span> Boundaries &nbsp;&nbsp;&nbsp;
-        <span style='color: lightgrey; font-size: 20px;'>&#9679;</span> Others
+    <p style='font-size: 30px; margin-top: 30px; text-align: right;'>
+        <span style='color: red; font-size: 30px;'>&#9679;</span> Wickets &nbsp;&nbsp;&nbsp;
+        <span style='color: royalblue; font-size: 30px;'>&#9679;</span> Boundaries &nbsp;&nbsp;&nbsp;
+        <span style='color: lightgrey; font-size: 30px;'>&#9679;</span> Others
     </p>
     """
     st.markdown(legend_markdown, unsafe_allow_html=True)
