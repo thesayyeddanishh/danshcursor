@@ -130,12 +130,17 @@ if "data_df" in st.session_state:
 
 import streamlit.components.v1 as components
 
-# Inject JavaScript to override the browser tab title
-components.html(
-    """
+st.markdown("""
     <script>
-        window.parent.document.title = "VR DANshboard";
+        // We set up an observer to watch for title changes and force it back
+        const targetNode = document.querySelector('title');
+        const observer = new MutationObserver(function(mutations) {
+            if (document.title !== "VR DANshboard") {
+                document.title = "VR DANshboard";
+            }
+        });
+        observer.observe(targetNode, { childList: true, subtree: true, characterData: true });
+        // Set it initially
+        document.title = "VR DANshboard";
     </script>
-    """,
-    height=0
-)
+""", unsafe_allow_html=True)
