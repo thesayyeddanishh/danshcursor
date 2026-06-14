@@ -144,7 +144,7 @@ def seam_pitch_bins_women_t20() -> Dict[str, List[float]]:
 
 def seam_pitch_bins_test() -> Dict[str, List[float]]:
     return {
-        "Full": [-5, 5.8],
+        "Full": [-2, 5.8],
         "Length": [5.8, 8],
         "Short": [8, 10],
         "Bouncer": [10, 16],
@@ -152,7 +152,7 @@ def seam_pitch_bins_test() -> Dict[str, List[float]]:
 
 def seam_pitch_bins_test_aus() -> Dict[str, List[float]]:
     return {
-        "Full": [-5, 5],
+        "Full": [-2, 5],
         "Length": [5, 7],
         "Short": [7, 10],
         "Bouncer": [10, 16],
