@@ -127,7 +127,7 @@ def create_Spinner_pitch_map(df_in):
     ax.axvline(x=0, color="#777777", linestyle="-", linewidth=0.5)
 
     ax.set_xlim([-1.5, 1.5])
-    ax.set_ylim([12, -0.1])
+    ax.set_ylim([12, -2])
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_xlabel("")
