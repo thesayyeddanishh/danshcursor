@@ -30,7 +30,6 @@ from cricket_config import (
 )
 
 from page_nav import render_page_nav
-from components.navigation import _NAV
 
 # --- 1. GLOBAL UTILITY FUNCTIONS ---
 
