@@ -1132,24 +1132,33 @@ def create_speed_metrics_bar(df_in, delivery_type):
     # Finally, fill any remaining NaNs (0/0 cases) with 0
     summary["Avg"] = summary["Avg"].fillna(0)
 
-    # 2. Force a completely clean slate
-    plt.clf()
-    plt.close('all')
-    
-    # 3. Create a clean figure with a fixed, wide layout
-    fig = plt.figure(figsize=(16, 5))
+    Define plot area
+    num_groups = len(summary)
+    fig, axes = plt.subplots(num_groups, 4, figsize=(12, num_groups * 0.8), sharex='col', sharey='row')
     
     metrics = ["Runs", "Dismissals", "Avg", "SR"]
     
-    # 4. Independent plots
-    for idx, metric in enumerate(metrics):
-        ax = fig.add_subplot(1, 4, idx + 1)
-        ax.barh(ordered_groups, summary[metric], color='#4A90E2', height=0.6)
-        ax.set_title(metric, fontweight='bold', fontsize=12)
-        ax.invert_yaxis()
-        ax.grid(axis='x', linestyle='--', alpha=0.3)
-        ax.spines[['top', 'right']].set_visible(False)
-        
+    # Iterate through rows (Speed Groups) and columns (Metrics)
+    for row_idx, (group_name, row_data) in enumerate(summary.iterrows()):
+        for col_idx, metric in enumerate(metrics):
+            ax = axes[row_idx, col_idx]
+            val = row_data[metric]
+            
+            # Simple bar for the value
+            ax.barh([0], [val], color='#4A90E2', height=0.5)
+            
+            # Remove all spines and ticks for a clean "cell" look
+            ax.set_axis_off()
+            ax.text(val + (val * 0.1), 0, f"{val:.1f}", va='center', fontsize=10)
+            
+            # Add titles only on the top row
+            if row_idx == 0:
+                ax.set_title(metric, fontsize=10, fontweight='bold')
+                
+        # Add the Speed Group label on the far left
+        axes[row_idx, 0].text(-0.2, 0, group_name, va='center', ha='right', 
+                              transform=axes[row_idx, 0].transAxes, fontweight='bold')
+
     plt.tight_layout()
     return fig
     
