@@ -147,12 +147,10 @@ def create_crease_beehive(df_in, delivery_type):
     ax_bh.axvline(x=-0.18, color="grey", linestyle="--", linewidth=0.5, zorder=2)
     ax_bh.axvline(x=0.18, color="grey", linestyle="--", linewidth=0.5, zorder=2)
     ax_bh.axvline(x=0, color="grey", linestyle="--", linewidth=0.5, zorder=2)
-    ax_bh.axvline(x=-0.92, color="green", linestyle="--", linewidth=1, zorder=2)
-    ax_bh.axvline(x=0.92, color="green", linestyle="--", linewidth=1, zorder=2)
-    ax_bh.axhline(y=0.78, color="grey", linestyle="-", linewidth=0.5, zorder=2)
+    ax_bh.axhline(y=0.78, color="grey", linestyle="-", linewidth=0.25, zorder=2)
 
     # --- Annotation ---
-    ax_bh.text(-0.98, 0.78, "Stump line", ha="left", va="bottom", fontsize=8, color="grey", transform=ax_bh.transData)
+    ax_bh.text(-1.25, 0.78, "Stump line", ha="left", va="bottom", fontsize=8, color="grey", transform=ax_bh.transData)
 
     # --- Formatting ---
     ax_bh.set_xlim([-1.5, 1.5])
