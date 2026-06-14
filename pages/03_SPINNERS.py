@@ -1114,7 +1114,7 @@ if not _multiselect_is_all(bowl_team_sel):
         teams_only = [t for t in bowl_team_sel if t != "All"]
         df_filtered = df_filtered[df_filtered["BowlingTeam"].isin(teams_only)]
 
-if not _multiselect_is_all(batsman_sel):
+if not _multiselect_is_all(bowler_sel):
         bowls = [b for b in bowler_sel if b != "All"]
         df_filtered = df_filtered[df_filtered["BowlerName"].isin(bowls)]
 
