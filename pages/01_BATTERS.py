@@ -50,6 +50,8 @@ def create_crease_beehive(df_in, delivery_type):
         ax.axis('off'); 
         return fig
 
+    add_crease_lateral_zone_background(ax_bh, is_rhb=is_rhb, zorder=0)
+    
     _cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
 
     # --- Data Filtering ---
@@ -105,7 +107,7 @@ def create_crease_beehive(df_in, delivery_type):
 
     # -----------------------------------------------------------
     ## --- 2. CHART 2a: CREASE BEEHIVE (ax_bh) ---
-    is_rhb = df_filtered["IsBatsmanRightHanded"].iloc[0] if not df_filtered.empty else True
+    is_rhb_val = bool(df_seam["IsBatsmanRightHanded"].iloc[0]) if not df_seam.empty else True
     add_crease_lateral_zone_background(ax_bh, is_rhb=is_rhb, zorder=0)
 
     # --- Traces ---
