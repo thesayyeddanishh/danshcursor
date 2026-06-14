@@ -1089,85 +1089,189 @@ def create_wagon_wheel(df_in, delivery_type):
                 autotext.set_text('')
     ax_wagon.axis('equal');
 
-#=============================================
-#------------ Chart 12: Speed Effectiveness
-#=============================================
-def create_speed_metrics_bar(df_in, delivery_type):
-    if df_in.empty: return None
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
-    _cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
+
+def create_speed_metrics_bar(df_in, delivery_type):
+
+    if df_in.empty:
+        return None
+
+    _cfg = resolve_format(
+        st.session_state.get("cricket_format", "men_t20i")
+    )
 
     def assign_speed_group(speed):
         if delivery_type == "Seam":
             return seam_speed_group(speed, _cfg)
         return spin_speed_group(speed, _cfg)
 
+    # -----------------------------
+    # Prepare Data
+    # -----------------------------
     df_temp = df_in.copy()
-    df_temp["ReleaseSpeed"] = pd.to_numeric(df_temp["ReleaseSpeed"], errors='coerce')
+
+    df_temp["ReleaseSpeed"] = pd.to_numeric(
+        df_temp["ReleaseSpeed"],
+        errors="coerce"
+    )
+
     df_temp = df_temp.dropna(subset=["ReleaseSpeed"])
-    df_temp["SpeedGroup"] = df_temp["ReleaseSpeed"].apply(assign_speed_group)
+
+    df_temp["SpeedGroup"] = (
+        df_temp["ReleaseSpeed"]
+        .apply(assign_speed_group)
+    )
 
     if delivery_type == "Seam":
         ordered_groups = seam_speed_ordered_groups(_cfg)
     else:
         ordered_groups = spin_speed_ordered_groups(_cfg)
 
-    # 3. Aggregate Data
-    summary = df_temp.groupby("SpeedGroup").agg(
-        Runs=("Runs", "sum"), 
-        Balls=("Runs", "count"),
-        Dismissals=("Wicket", "sum") 
-    ).reindex(ordered_groups).fillna(0)
-    
-    # Calculations
-    summary["SR"] = (summary["Runs"] / summary["Balls"] * 100).fillna(0)
-    
-    # Calculate Average
-    # If Dismissals > 0, do the math; otherwise, the average is just the Total Runs
-    summary["Avg"] = (summary["Runs"] / summary["Dismissals"])
-    
-    # This checks for both positive and negative infinity and replaces with Runs
-    summary.loc[np.isinf(summary["Avg"]), "Avg"] = summary["Runs"]
-    
-    # Finally, fill any remaining NaNs (0/0 cases) with 0
+    # -----------------------------
+    # Aggregate
+    # -----------------------------
+    summary = (
+        df_temp.groupby("SpeedGroup")
+        .agg(
+            Runs=("Runs", "sum"),
+            Balls=("Runs", "count"),
+            Dismissals=("Wicket", "sum")
+        )
+        .reindex(ordered_groups)
+        .fillna(0)
+    )
+
+    summary["SR"] = (
+        summary["Runs"] /
+        summary["Balls"] * 100
+    ).fillna(0)
+
+    summary["Avg"] = (
+        summary["Runs"] /
+        summary["Dismissals"]
+    )
+
+    summary.loc[
+        np.isinf(summary["Avg"]),
+        "Avg"
+    ] = summary["Runs"]
+
     summary["Avg"] = summary["Avg"].fillna(0)
 
+    # -----------------------------
+    # Plot
+    # -----------------------------
     metrics = ["Runs", "Dismissals", "Avg", "SR"]
-    num_groups = len(summary)
-    y_pos = np.arange(num_groups)
-    
-    # Create a figure with 4 side-by-side subplots
-    fig, axes = plt.subplots(1, 4, figsize=(14, 4), sharey=True)
-    
-    for i, metric in enumerate(metrics):
-        ax = axes[i]
-        values = summary[metric]
-        
-        # Horizontal bars for the current metric across all speed groups
-        bars = ax.barh(y_pos, values, color='#ff5000', height=0.6)
-        
-        # Formatting
-        ax.set_title(metric, fontweight='bold', fontsize=12)
-        ax.set_yticks(y_pos)
-        
-        # Only show y-labels on the first column
-        if i == 0:
-            ax.set_yticklabels(summary.index)
-        else:
-            ax.set_yticklabels([])
-            
-        # Hide spines for clean look
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['left'].set_visible(True if i == 0 else False)
-        
-        # Add labels at the end of bars
-        for bar in bars:
-            width = bar.get_width()
-            ax.text(width * 1.05, bar.get_y() + bar.get_height()/2, 
-                    f'{width:.1f}', va='center', fontsize=10)
 
-    plt.tight_layout()
+    fig = plt.figure(
+        figsize=(10, 10),
+        facecolor="white"
+    )
+
+    gs = fig.add_gridspec(
+        nrows=4,
+        ncols=1,
+        hspace=0.55
+    )
+
+    for idx, metric in enumerate(metrics):
+
+        ax = fig.add_subplot(gs[idx])
+
+        values = summary[metric].values
+        groups = summary.index.tolist()
+
+        y = np.arange(len(groups))
+
+        # Hollow bars like sketch
+        ax.barh(
+            y,
+            values,
+            height=0.55,
+            facecolor="white",
+            edgecolor="black",
+            linewidth=1.5
+        )
+
+        max_val = max(values) if max(values) > 0 else 1
+
+        # Labels at end of bars
+        for ypos, val in zip(y, values):
+
+            if metric in ["Avg", "SR"]:
+                label = f"{val:.0f}"
+            else:
+                label = f"{int(val)}"
+
+            ax.text(
+                val + max_val * 0.05,
+                ypos,
+                label,
+                va="center",
+                ha="left",
+                fontsize=12,
+                fontweight="bold"
+            )
+
+        # Y labels
+        ax.set_yticks(y)
+        ax.set_yticklabels(
+            groups,
+            fontsize=11
+        )
+
+        ax.invert_yaxis()
+
+        # Metric title
+        ax.text(
+            -0.28,
+            0.5,
+            metric,
+            transform=ax.transAxes,
+            fontsize=14,
+            fontweight="bold",
+            va="center",
+            ha="right"
+        )
+
+        # Remove x-axis
+        ax.set_xticks([])
+        ax.tick_params(
+            axis="y",
+            length=0
+        )
+
+        # Clean styling
+        ax.spines["right"].set_visible(False)
+        ax.spines["bottom"].set_visible(False)
+
+        ax.spines["left"].set_visible(True)
+        ax.spines["left"].set_linewidth(1.2)
+
+        ax.spines["top"].set_visible(True)
+        ax.spines["top"].set_linewidth(1.2)
+
+        if idx == len(metrics) - 1:
+            ax.spines["bottom"].set_visible(True)
+            ax.spines["bottom"].set_linewidth(1.2)
+
+        ax.set_xlim(
+            0,
+            max_val * 1.35
+        )
+
+    fig.suptitle(
+        f"METRICS BY RELEASE SPEED v {delivery_type.upper()}",
+        fontsize=18,
+        fontweight="bold",
+        y=0.98
+    )
+
+    plt.tight_layout(rect=[0.08, 0.02, 1, 0.96])
+
     return fig
     
 #----------------------------------------
