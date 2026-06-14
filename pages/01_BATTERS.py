@@ -1237,38 +1237,33 @@ if 'data_df' not in st.session_state:
 df_raw = st.session_state['data_df']
 _cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
 # Header: wide title | file | format (right) | legend
-col_title_space, col_file, col_format_banner, col_legend = st.columns([2.6, 1.5, 2.8, 2.1])
+# 1. Setup the 5-column layout
+# Adjust the numbers [0.5, 3, 1, 2, 0.5] to change the width of each section
+cols = st.columns([0.5, 2, 1.5, 2, 0.5], vertical_alignment="center")
 
-with col_title_space:
-    st.title("BATTERS")
+# 2. Render each component in its specific column
+with cols[0]: # Previous Button
+    page_id = "batters"
+    idx = next((i for i, (pid, _) in enumerate(_NAV) if pid == page_id), 0)
+    if st.button("◀", key="nav_prev"):
+        st.switch_page(_NAV[(idx - 1) % len(_NAV)][1])
 
-with col_file:
-    file_name = st.session_state.get("file_name", "N/A")
-    st.markdown(
-        f"""
-        <div style='margin-top: 35px; text-align: right;'>
-            <span style='color: grey; font-size: 14px;'>File: </span>
-            <code style='font-size: 14px;'>{file_name}</code>
-        </div>
-    """,
-        unsafe_allow_html=True,
-    )
+with cols[1]: # Title
+    st.subheader("BATTERS")
 
-with col_format_banner:
-    st.markdown(
-        f'<div style="margin-top: 28px; text-align: right; width: 100%;"><span style="{FORMAT_BANNER_STYLE}">{format_banner_caps(_cfg)}</span></div>',
-        unsafe_allow_html=True,
-    )
+with cols[2]: # File text
+    st.caption("File: `post elim.csv`")
 
-with col_legend:
-    legend_markdown = """
-    <p style='font-size: 16px; margin-top: 30px; text-align: right;'>
-        <span style='color: red; font-size: 20px;'>&#9679;</span> Wickets &nbsp;&nbsp;&nbsp;
-        <span style='color: royalblue; font-size: 20px;'>&#9679;</span> Boundaries &nbsp;&nbsp;&nbsp;
-        <span style='color: lightgrey; font-size: 20px;'>&#9679;</span> Others
-    </p>
-    """
-    st.markdown(legend_markdown, unsafe_allow_html=True)
+with cols[3]: # Legend
+    # Using columns for the legend items so they stay on one line
+    l1, l2, l3 = st.columns(3)
+    l1.write("🔴 Wickets")
+    l2.write("🔵 Boundaries")
+    l3.write("⚪ Others")
+
+with cols[4]: # Next Button
+    if st.button("▶", key="nav_next"):
+        st.switch_page(_NAV[(idx + 1) % len(_NAV)][1])
 
 # Ensure columns exist before attempting to convert them
 if "BatsmanName" in df_raw.columns:
