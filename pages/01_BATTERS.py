@@ -332,12 +332,12 @@ def create_pitch_map(df_in, delivery_type):
         ax.axhline(y=y_val, color="lightgrey", linewidth=1.0, linestyle="--")
 
     pct_by_bin = pitch_bin_percentages(df_in, PITCH_BINS, bounce_col="BounceX")
-    y_off = 0.42 if _cfg.is_test or delivery_type == "Seam" else 0.22
+    y_off = 0.2 if _cfg.is_test or delivery_type == "Seam" else 0.22
     for Length, bounds in PITCH_BINS.items():
         mid_y = (bounds[0] + bounds[1]) / 2
         ax.text(
             x=-1.45,
-            y=mid_y,
+            y=mid_y + y_off,
             s=str(Length).upper(),
             ha="left",
             va="center",
@@ -376,7 +376,7 @@ def create_pitch_map(df_in, delivery_type):
             s=75,
             c="royalblue",
             edgecolor="white",
-            linewidths=0.0,
+            linewidths=0.5,
             alpha=1,
             label="Boundaries",
         )
@@ -387,7 +387,7 @@ def create_pitch_map(df_in, delivery_type):
             s=90,
             c="red",
             edgecolor="white",
-            linewidths=1.0,
+            linewidths=0.5,
             alpha=1,
             label="Wicket",
         )
