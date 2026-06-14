@@ -17,6 +17,7 @@ FORMAT_KEYS: Tuple[str, ...] = (
     "men_odi",
     "women_odi",
     "men_test",
+    "men_test_aus",
 )
 
 FORMAT_LABELS: Dict[str, str] = {
@@ -25,6 +26,7 @@ FORMAT_LABELS: Dict[str, str] = {
     "men_odi": "Men's ODI",
     "women_odi": "Women's ODI",
     "men_test": "Men's Test",
+    "men_test_aus": "Men's Test - AUS",
 }
 
 
@@ -43,11 +45,16 @@ def resolve_format(key: Optional[str]) -> FormatConfig:
     k = (key or "men_t20i").strip()
     if k not in FORMAT_KEYS:
         k = "men_t20i"
-    is_test = k == "men_test"
+    
+    # Update this line to include the new key
+    is_test = k in ["men_test", "men_test_aus"] 
     is_womens = k.startswith("women_")
     is_odi = k.endswith("_odi")
+    
     if is_test:
-        title, sub = "Men's", "Red Ball (Test)"
+        # You can differentiate titles here if needed
+        title = "Men's (AUS)" if k == "men_test_aus" else "Men's"
+        sub = "Red Ball (Test)"
     elif is_womens:
         title, sub = ("Women's", "ODI") if is_odi else ("Women's", "T20I")
     else:
@@ -75,8 +82,8 @@ def match_phase_options(cfg: FormatConfig) -> List[str]:
     if cfg.is_odi:
         return [
             PHASE_ALL,
-            "Powerplay (1-6)",
-            "Middle (7-40)",
+            "Powerplay (1-10)",
+            "Middle (11-40)",
             "Death (41-50)",
         ]
     return [
@@ -145,6 +152,14 @@ def seam_pitch_bins_test() -> Dict[str, List[float]]:
         "Bouncer": [10, 16],
     }
 
+def seam_pitch_bins_test_aus() -> Dict[str, List[float]]:
+    return {
+        "Full": [-5, 5],
+        "Length": [5, 7],
+        "Short": [7, 10],
+        "Bouncer": [10, 16],
+    }
+
 
 def spin_pitch_bins_men_t20() -> Dict[str, List[float]]:
     return {
@@ -172,8 +187,15 @@ def spin_pitch_bins_test() -> Dict[str, List[float]]:
         "Short": [6.2, 15.0],
     }
 
-
 def get_pitch_bins(delivery_type: str, cfg: FormatConfig) -> Dict[str, List[float]]:
+    # --- New Logic for AUS ---
+    if cfg.key == "men_test_aus":
+        if delivery_type == "Seam":
+            return seam_pitch_bins_test_aus()
+        if delivery_type == "Spin":
+            return spin_pitch_bins_test()
+        return {}
+
     if cfg.is_test:
         if delivery_type == "Seam":
             return seam_pitch_bins_test()
@@ -282,6 +304,14 @@ def filter_batter_length(df: pd.DataFrame, f3: str, cfg: FormatConfig) -> pd.Dat
         if f3 == "BOUNCER":
             return df[bx >= 10.0].copy()
         return df.copy()
+
+    if cfg.key == "men_test_aus":
+        if f3 == "FULL": return df[bx < 5.0].copy()
+        if f3 == "LENGTH": return df[(bx >= 5.0) & (bx < 7.0)].copy()
+        if f3 == "SHORT": return df[(bx >= 7.0) & (bx < 10.0)].copy()
+        if f3 == "BOUNCER": return df[bx >= 10.0].copy()
+        return df.copy()
+  
     if cfg.is_womens:
         if f3 == "FULL TOSS":
             return df[bx < 0.9].copy()
