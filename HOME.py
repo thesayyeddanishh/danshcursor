@@ -90,7 +90,7 @@ with st.expander("Required CSV columns when exporting from CDS"):
 * **General:** `Innings`, `Over`, `Ball`, `BowlerName`, `BatsmanName`, `BowlingTeam`, `BattingTeam`
 * **Handedness:** `IsBowlerRightHanded`, `IsBatsmanRightHanded`
 * **Results:** `Wicket`, `Runs`
-* **Coordinates:** 'Bounce X Y', 'Interception X Y Z', 'Crease Y Z', 'Stumps Y Z', 'Release Y Z', 'Landing X Y'
+* **Coordinates:** `Bounce X Y`, `Interception X Y Z`, `Crease Y Z`, `Stumps Y Z`, `Release Y Z`, `Landing X Y`
 * **Delivery:** `DeliveryType`, `ReleaseSpeed`, `Deviation`, `Swing`
 * **Match:** `Ground`, `Tour`, `Year`, `Match`
         """
