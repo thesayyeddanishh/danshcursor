@@ -1230,7 +1230,7 @@ def create_speed_metrics_bar(df_in, delivery_type):
     
         # Metric label (Runs, Dismissals, Avg, SR)
         ax.text(
-            -0.01,
+            -0.10,
             0.5,
             metric,
             transform=ax.transAxes,
