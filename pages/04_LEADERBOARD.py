@@ -126,7 +126,7 @@ with _col_title_lb:
     st.title("LEADERBOARD")
 with _col_fmt_lb:
     st.markdown(
-        f'<div style="margin-top: 28px; text-align: right; width: 100%;"><span style="{FORMAT_BANNER_STYLE}">{format_banner_caps(_cfg)}</span></div>',
+        f'<div style="margin-top: 28px; text-align: left; width: 100%;"><span style="{FORMAT_BANNER_STYLE}">{format_banner_caps(_cfg)}</span></div>',
         unsafe_allow_html=True,
     )
 st.write("---")
@@ -156,7 +156,7 @@ else:
     # ------------------------------------------------------------------
     # --- SPLIT SCREEN LAYOUT DESIGN ---
     # ------------------------------------------------------------------
-    main_display_col, filter_panel_col = st.columns([7, 1], gap="large")
+    main_display_col, filter_panel_col = st.columns([6, 2], gap="large")
 
     # Objects to hold our conditional data slice
     df_filtered = pd.DataFrame()
