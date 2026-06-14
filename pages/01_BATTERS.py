@@ -105,7 +105,8 @@ def create_crease_beehive(df_in, delivery_type):
 
     # -----------------------------------------------------------
     ## --- 2. CHART 2a: CREASE BEEHIVE (ax_bh) ---
-    add_crease_lateral_zone_background(ax_bh, zorder=0)
+    is_rhb = df_filtered["IsBatsmanRightHanded"].iloc[0] if not df_filtered.empty else True
+    add_crease_lateral_zone_background(ax_bh, is_rhb=is_rhb, zorder=0)
 
     # --- Traces ---
     ax_bh.scatter(
