@@ -1092,7 +1092,7 @@ def create_wagon_wheel(df_in, delivery_type):
 #------------ Chart 12: Speed Effectiveness
 def create_speed_metrics_bar(df_in, delivery_type):
     if df_in.empty:
-        fig, ax = plt.subplots(figsize=(5, 3))
+        fig, ax = plt.subplots(figsize=(5, 4))
         ax.text(0.5, 0.5, "No Data", ha='center', va='center')
         ax.axis('off')
         return fig
