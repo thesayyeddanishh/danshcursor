@@ -39,6 +39,20 @@ REQUIRED_COLS = [
     "InterceptionZ", "InterceptionY", "Over"
 ]
 
+def handle_all_selection(key):
+    selected = st.session_state[key]
+    
+    if len(selected) == 0:
+        # If user clears the box, put "All" back
+        st.session_state[key] = ["All"]
+    elif "All" in selected and len(selected) > 1:
+        # If they just clicked "All", remove specific teams
+        if selected[-1] == "All":
+            st.session_state[key] = ["All"]
+        # If they just clicked a specific team, remove "All"
+        else:
+            st.session_state[key] = [x for x in selected if x != "All"]
+
 # Function to encode Matplotlib figure to image for Streamlit
 def fig_to_image(fig):
     return fig
@@ -1272,19 +1286,26 @@ def _multiselect_is_all(sel):
 all_teams = ["All"] + sorted(df_raw["BattingTeam"].dropna().unique().tolist())
 
 row1 = st.columns(4)
+
 with row1[0]:
-    bat_team_sel = st.multiselect("Batting Team", all_teams, default=["All"])
-
-if _multiselect_is_all(bat_team_sel):
-    df_bat_opts = df_raw
-else:
-    teams_only = [t for t in bat_team_sel if t != "All"]
-    df_bat_opts = df_raw[df_raw["BattingTeam"].isin(teams_only)]
-
-batsmen_options = ["All"] + sorted(df_bat_opts["BatsmanName"].dropna().unique().tolist())
+    bat_team_sel = st.multiselect(
+        "Batting Team", 
+        all_teams, 
+        default=["All"],
+        key="team_filter",                             # 1. Add a unique key
+        on_change=handle_all_selection,                # 2. Call the function
+        args=("team_filter",)                          # 3. Pass the key to the function
+    )
 
 with row1[1]:
-    batsman_sel = st.multiselect("Batsman Name", batsmen_options, default=["All"])
+    batsman_sel = st.multiselect(
+        "Batsman Name", 
+        batsmen_options, 
+        default=["All"],
+        key="batter_filter",                           # 1. Add a unique key
+        on_change=handle_all_selection,                # 2. Call the function
+        args=("batter_filter",)                        # 3. Pass the key
+    )
 
 year_col = next((c for c in df_raw.columns if c.strip().lower() == "year"), None)
 ground_col = next((c for c in df_raw.columns if c.strip().lower() == "ground"), None)
