@@ -48,7 +48,7 @@ REQUIRED_COLS = [
 
 st.set_page_config(
     page_title="VR DANshboard", 
-    page_icon="danshcursor/hawk_logo.png"
+    page_icon="hawk-logo.png"
     layout="wide"
 )
 
