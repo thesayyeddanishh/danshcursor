@@ -100,10 +100,11 @@ uploaded_file = st.file_uploader("Upload your CSV file here", type=["csv"], key=
 if uploaded_file is not None:
     if "data_df" not in st.session_state or uploaded_file.name != st.session_state.get("file_name"):
         process_upload(uploaded_file)
+      
+st.info("Wait for the next line to turn Blue")
 
 if "data_df" in st.session_state:
     df_loaded = st.session_state["data_df"]
-    st.info("Wait for the next line to turn Blue")
     st.info("CSV is loaded. Open **Batters**, **Pacers**, **Spinners**, or **Leaderboard** from the sidebar.")
     st.write(f"Total deliveries: {len(df_loaded):,}")
     if st.checkbox("Show first 5 rows"):
