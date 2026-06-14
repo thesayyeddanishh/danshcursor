@@ -470,9 +470,7 @@ def add_crease_lateral_zone_background(ax, is_rhb: bool, zorder: int = 0) -> Non
     """
     # Set multiplier: 1 for RHB, -1 for LHB
     m = 1 if is_rhb else -1
-    
-    # Apply multiplier to all boundary values
-    # Original ranges: (-1.0, -0.65), (-0.65, -0.18), (-0.18, 0.18), (0.18, 1.0)
+
     ax.axvspan(-1.0 * m, -0.65 * m, facecolor="#ffffcc", alpha=0.25, zorder=zorder, linewidth=0)
     ax.axvspan(-0.65 * m, -0.18 * m, facecolor="#ffcccc", alpha=0.25, zorder=zorder, linewidth=0)
     ax.axvspan(-0.18 * m, 0.18 * m, facecolor="#ccffcc", alpha=0.25, zorder=zorder, linewidth=0)
