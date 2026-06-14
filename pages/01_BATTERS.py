@@ -97,7 +97,7 @@ def create_crease_beehive(df_in, delivery_type):
     # -----------------------------------------------------------
     # --- 1. SETUP SUBPLOTS (Increased Figure Width) ---
 
-    fig = plt.figure(figsize=(6, 7))
+    fig = plt.figure(figsize=(7, 6))
     gs = fig.add_gridspec(2, 1, height_ratios=[4, 1], hspace=0.01)
     ax_bh = fig.add_subplot(gs[0, 0])      # Top subplot (Beehive)
     ax_boxes = fig.add_subplot(gs[1, 0])   # Bottom subplot (Lateral Boxes)
