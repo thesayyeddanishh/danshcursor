@@ -1132,32 +1132,40 @@ def create_speed_metrics_bar(df_in, delivery_type):
     # Finally, fill any remaining NaNs (0/0 cases) with 0
     summary["Avg"] = summary["Avg"].fillna(0)
 
-    #Define plot area
-    num_groups = len(summary)
-    fig, axes = plt.subplots(num_groups, 4, figsize=(12, num_groups * 0.8), sharex='col', sharey='row')
-    
     metrics = ["Runs", "Dismissals", "Avg", "SR"]
+    num_groups = len(summary)
+    y_pos = np.arange(num_groups)
     
-    # Iterate through rows (Speed Groups) and columns (Metrics)
-    for row_idx, (group_name, row_data) in enumerate(summary.iterrows()):
-        for col_idx, metric in enumerate(metrics):
-            ax = axes[row_idx, col_idx]
-            val = row_data[metric]
+    # Create a figure with 4 side-by-side subplots
+    fig, axes = plt.subplots(1, 4, figsize=(14, 4), sharey=True)
+    
+    for i, metric in enumerate(metrics):
+        ax = axes[i]
+        values = summary[metric]
+        
+        # Horizontal bars for the current metric across all speed groups
+        bars = ax.barh(y_pos, values, color='#ff5000', height=0.6)
+        
+        # Formatting
+        ax.set_title(metric, fontweight='bold', fontsize=12)
+        ax.set_yticks(y_pos)
+        
+        # Only show y-labels on the first column
+        if i == 0:
+            ax.set_yticklabels(summary.index)
+        else:
+            ax.set_yticklabels([])
             
-            # Simple bar for the value
-            ax.barh([0], [val], color='#ff5000', height=0.5)
-            
-            # Remove all spines and ticks for a clean "cell" look
-            ax.set_axis_off()
-            ax.text(val + (val * 0.1), 0, f"{val:.1f}", va='center', fontsize=14)
-            
-            # Add titles only on the top row
-            if row_idx == 0:
-                ax.set_title(metric, fontsize=14, fontweight='bold')
-                
-        # Add the Speed Group label on the far left
-        axes[row_idx, 0].text(-0.2, 0, group_name, va='center', ha='right', 
-                              transform=axes[row_idx, 0].transAxes, fontweight='bold')
+        # Hide spines for clean look
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_visible(True if i == 0 else False)
+        
+        # Add labels at the end of bars
+        for bar in bars:
+            width = bar.get_width()
+            ax.text(width * 1.05, bar.get_y() + bar.get_height()/2, 
+                    f'{width:.1f}', va='center', fontsize=10)
 
     plt.tight_layout()
     return fig
