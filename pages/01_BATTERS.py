@@ -741,7 +741,7 @@ def create_interception_side_on(df_in, delivery_type):
     # === USING PROVIDED LOGIC: PLOT (InterceptionX + 10) on X-axis ===
     ax_scatter.scatter(
         df_other["InterceptionX"] + 10, df_other["InterceptionZ"], 
-        color='#D3D3D3', edgecolors='white', linewidths=0.3, s=40, label="Other"
+        color='#D3D3D3', edgecolors='white', linewidths=0.3, s=40, label="Other", zorder=2
     )
     
     # Plot "Wicket" and "Boundary" (Solid colors)
@@ -750,7 +750,7 @@ def create_interception_side_on(df_in, delivery_type):
         # === USING PROVIDED LOGIC: PLOT (InterceptionX + 10) on X-axis ===
         ax_scatter.scatter(
             df_slice["InterceptionX"] + 10, df_slice["InterceptionZ"], 
-            color=color_map[ctype],edgecolors='white', linewidths=0.3, s=65, label=ctype
+            color=color_map[ctype],edgecolors='white', linewidths=0.3, s=65, label=ctype, zorder=3
         )
 
     # 2. Draw Vertical Dashed Lines with Labels (FIXED LINES: 0.0, 1.25, 2.0, 3.0)
@@ -762,7 +762,7 @@ def create_interception_side_on(df_in, delivery_type):
     }
     
     for x_val, label in line_specs.items():
-        ax_scatter.axvline(x=x_val, color='lightgrey', linestyle='--', linewidth=0.8, alpha=0.7)     
+        ax_scatter.axvline(x=x_val, color='lightgrey', linestyle='--', linewidth=0.8, alpha=0.7, zorder=1)     
         ax_scatter.text(x_val, 1.75, label.split(':')[-1].strip(), ha='center', va='center', fontsize=8, color='grey', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', pad=1), zorder=1)
         
     ax_scatter.axhline(y=0.78, color="grey", linestyle="--", linewidth=0.5,zorder=1)
