@@ -395,7 +395,6 @@ def create_pitch_map(df_in, delivery_type):
     ax.axvline(x=-0.18, color="#777777", linestyle="-", linewidth=0.5)
     ax.axvline(x=0.18, color="#777777", linestyle="-", linewidth=0.5)
     ax.axvline(x=0, color="#777777", linestyle="-", linewidth=0.5)
-    ax.axvline(y=0, color="#777777", linestyle="--", linewidth=0.5)
 
     ax.set_xlim([-1.5, 1.5])
     ax.set_ylim([16.0, -4.0])
