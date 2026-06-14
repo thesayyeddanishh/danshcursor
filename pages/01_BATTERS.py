@@ -1232,22 +1232,10 @@ if 'data_df' not in st.session_state:
 df_raw = st.session_state['data_df']
 _cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
 # Header: wide title | file | format (right) | legend
-col_title_space, col_file, col_format_banner, col_legend = st.columns([2, 1.5, 2.8, 2.1])
+col_title_space, col_format_banner, col_legend = st.columns([2.5, 2.8, 2.1])
 
 with col_title_space:
     st.title("BATTERS")
-
-with col_file:
-    file_name = st.session_state.get("file_name", "N/A")
-    st.markdown(
-        f"""
-        <div style='margin-top: 35px; text-align: right;'>
-            <span style='color: grey; font-size: 14px;'>File: </span>
-            <code style='font-size: 14px;'>{file_name}</code>
-        </div>
-    """,
-        unsafe_allow_html=True,
-    )
 
 with col_format_banner:
     st.markdown(
