@@ -377,7 +377,7 @@ def create_pitch_map(df_in, delivery_type):
             c="royalblue",
             edgecolor="white",
             linewidths=0.5,
-            alpha=1,
+            alpha=0.75,
             label="Boundaries",
         )
     if not pitch_wickets.empty:
@@ -433,7 +433,7 @@ def _create_pitch_Length_bars_test(df_in, delivery_type):
     elif delivery_type == "Spin":
         ordered_keys = ordered_spin_keys(_cfg)
     else:
-        fig, ax = plt.subplots(figsize=FIG_SIZE)
+        fig, ax = plt.subplots(figsize=(3.5, 7))
         ax.text(0.5, 0.5, "Invalid Delivery Type", ha="center", va="center", fontsize=12)
         ax.axis("off")
         return fig
@@ -467,7 +467,7 @@ def _create_pitch_Length_bars_test(df_in, delivery_type):
         df_summary[col] = df_summary[col].replace([np.inf, -np.inf], 0).fillna(0)
 
     categories = df_summary.index.tolist()[::-1]
-    fig, axes = plt.subplots(3, 1, figsize=FIG_SIZE, sharey=True)
+    fig, axes = plt.subplots(3, 1, figsize=(3.5, 7), sharey=True)
 
     metrics = ["Runs", "Dismissals", "Average"]
     titles = ["Runs", "Dismissals", "Batting Average"]
