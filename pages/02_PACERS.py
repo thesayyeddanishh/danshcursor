@@ -1141,7 +1141,7 @@ with row2[0]:
 
 with row2[1]:
     if match_col:
-        match_vals = sorted(df_raw[match_col].dropna().astype(str).unique().tolist())
+        match_vals = sorted(df_raw[bowl_team_sel].dropna().astype(str).unique().tolist())
         selected_matches = st.multiselect(
             "Match", 
             ["All"] + match_vals, 
