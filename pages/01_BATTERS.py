@@ -1245,9 +1245,9 @@ cols = st.columns([0.5, 2, 1.5, 2, 0.5], vertical_alignment="center")
 # 2. Render each component in its specific column
 with cols[0]: # Previous Button
     page_id = "batters"
-    idx = next((i for i, (pid, _) in enumerate(_NAV) if pid == page_id), 0)
+    idx = next((i for i, (pid, _) in enumerate(render_page_nav) if pid == page_id), 0)
     if st.button("◀", key="nav_prev"):
-        st.switch_page(_NAV[(idx - 1) % len(_NAV)][1])
+        st.switch_page(render_page_nav[(idx - 1) % len(render_page_nav)][1])
 
 with cols[1]: # Title
     st.subheader("BATTERS")
@@ -1264,7 +1264,7 @@ with cols[3]: # Legend
 
 with cols[4]: # Next Button
     if st.button("▶", key="nav_next"):
-        st.switch_page(_NAV[(idx + 1) % len(_NAV)][1])
+        st.switch_page(render_page_nav[(idx + 1) % len(render_page_nav)][1])
 
 # Ensure columns exist before attempting to convert them
 if "BatsmanName" in df_raw.columns:
