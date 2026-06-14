@@ -1092,12 +1092,8 @@ def create_wagon_wheel(df_in, delivery_type):
 #=============================================
 #------------ Chart 12: Speed Effectiveness
 #=============================================
-def create_speed_metric(df_in, delivery_type):
-    if df_in.empty:
-        fig, ax = plt.subplots(figsize=(5, 4))
-        ax.text(0.5, 0.5, "No Data", ha='center', va='center')
-        ax.axis('off')
-        return fig
+def create_speed_metrics_bar(df_in, delivery_type):
+    if df_in.empty: return None
 
     _cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
 
@@ -1136,47 +1132,29 @@ def create_speed_metric(df_in, delivery_type):
     # Finally, fill any remaining NaNs (0/0 cases) with 0
     summary["Avg"] = summary["Avg"].fillna(0)
 
-    # 4. Plotting - Final Forced Refresh Logic
-    bar_color = '#4A90E2'
-    text_color = '#333333'
+    # NEW: Create a completely independent figure
+    fig = plt.figure(figsize=(16, 5))
     
-    # Force creation of a unique figure object 
-    # (The 'num' argument ensures it doesn't try to reuse an existing window)
-    fig = plt.figure(figsize=(15, 0.7 * len(ordered_groups) + 1.5))
-    fig.patch.set_facecolor('white')
-    
-    y = np.arange(len(ordered_groups))
-    height = 0.6
-    metrics = ["Runs", "Dismissals", "Avg", "SR"]
-    titles = ["Total Runs", "Dismissals", "Batting Avg", "Strike Rate"]
-
-    # Use add_subplot to build it step-by-step
-    axes = [fig.add_subplot(1, 4, i+1) for i in range(4)]
-    
-    for ax, metric, title in zip(axes, metrics, titles):
-        ax.set_facecolor('white')
-        vals = summary[metric]
+    # We define 4 distinct subplots explicitly
+    # This ignores any old structure and forces a new layout
+    for idx, metric in enumerate(["Runs", "Dismissals", "Avg", "SR"]):
+        ax = fig.add_subplot(1, 4, idx + 1)
         
-        ax.grid(axis='x', linestyle='--', alpha=0.3, zorder=0)
-        ax.barh(y, vals, color=bar_color, edgecolor='none', height=height, zorder=2)
-        ax.set_title(title, fontsize=12, fontweight='bold', color=text_color, pad=12)
+        # Plotting the Speed Groups on the Y-Axis
+        y_pos = np.arange(len(ordered_groups))
+        ax.barh(y_pos, summary[metric], color='#4A90E2', height=0.6)
         
-        max_val = vals.max() if vals.max() > 0 else 1
-        for i, v in enumerate(vals):
-            ax.text(v + (max_val * 0.03), i, f'{v:.0f}' if metric not in ["Avg", "SR"] else f'{v:.1f}',
-                    va='center', ha='left', fontsize=10, color=text_color)
-            
-        ax.spines[['top', 'right', 'bottom']].set_visible(False)
-        ax.spines['left'].set_color('#dddddd')
+        ax.set_title(metric, fontweight='bold')
+        ax.set_yticks(y_pos)
+        ax.set_yticklabels(ordered_groups if idx == 0 else [])
+        
+        # Grid and clean-up
+        ax.grid(axis='x', linestyle='--', alpha=0.3)
+        ax.spines[['top', 'right']].set_visible(False)
         ax.invert_yaxis()
-        ax.set_xlim(0, max_val * 1.35)
 
-    axes[0].set_yticks(y)
-    axes[0].set_yticklabels(ordered_groups, fontsize=11, color=text_color, fontweight='bold')
-    axes[0].tick_params(axis='y', length=0)
-    
-    plt.tight_layout(pad=2.0)
-    return fig # Streamlit handles the rendering
+    plt.tight_layout()
+    return fig
     
 #----------------------------------------
 # PAGE LAYOUT SETUP
