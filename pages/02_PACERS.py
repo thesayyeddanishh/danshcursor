@@ -1006,35 +1006,23 @@ if 'data_df' not in st.session_state:
 df_raw = st.session_state['data_df']
 _cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
 
-col_title_space, col_file, col_format_banner, col_legend = st.columns([2.6, 1.5, 2.8, 2.1])
+col_title_space, col_format_banner, col_legend = st.columns([2.5, 2.5, 5])
 
 with col_title_space:
     st.title("PACERS")
 
-with col_file:
-    file_name = st.session_state.get("file_name", "N/A")
-    st.markdown(
-        f"""
-        <div style='margin-top: 35px; text-align: right;'>
-            <span style='color: grey; font-size: 14px;'>File: </span>
-            <code style='font-size: 14px;'>{file_name}</code>
-        </div>
-    """,
-        unsafe_allow_html=True,
-    )
-
 with col_format_banner:
     st.markdown(
-        f'<div style="margin-top: 28px; text-align: right; width: 100%;"><span style="{FORMAT_BANNER_STYLE}">{format_banner_caps(_cfg)}</span></div>',
+        f'<div style="margin-top: 38px; text-align: left; width: 100%;"><span style="{FORMAT_BANNER_STYLE}">{format_banner_caps(_cfg)}</span></div>',
         unsafe_allow_html=True,
     )
 
 with col_legend:
     legend_markdown = """
-    <p style='font-size: 16px; margin-top: 30px; text-align: right;'>
-        <span style='color: red; font-size: 20px;'>&#9679;</span> Wickets &nbsp;&nbsp;&nbsp;
-        <span style='color: royalblue; font-size: 20px;'>&#9679;</span> Boundaries &nbsp;&nbsp;&nbsp;
-        <span style='color: lightgrey; font-size: 20px;'>&#9679;</span> Others
+    <p style='font-size: 20px; margin-top: 40px; text-align: right;'>
+        <span style='color: red; font-size: 25px;'>&#9679;</span> Wickets &nbsp;&nbsp;&nbsp;
+        <span style='color: royalblue; font-size: 25px;'>&#9679;</span> Boundaries &nbsp;&nbsp;&nbsp;
+        <span style='color: lightgrey; font-size: 25px;'>&#9679;</span> Others
     </p>
     """
     st.markdown(legend_markdown, unsafe_allow_html=True)
@@ -1050,37 +1038,55 @@ df_seam_base = df_raw[df_raw["DeliveryType"] == "Seam"]
 
 
 # --- Prepare Initial Filter Options ---
-if "BowlingTeam" in df_seam_base.columns:
-    team_column = "BowlingTeam"
-else:
-    team_column = "BattingTeam" 
-    st.warning("The 'BowlingTeam' column was not found. Displaying all Batting Teams as a fallback.")
+def handle_all_selection(key):
+    """Ensures 'All' behaves cleanly with specific options."""
+    selected = st.session_state[key]
+    if len(selected) == 0:
+        st.session_state[key] = ["All"]
+    elif "All" in selected and len(selected) > 1:
+        if selected[-1] == "All":
+            st.session_state[key] = ["All"]
+        else:
+            st.session_state[key] = [x for x in selected if x != "All"]
 
-# 3. FILTERS — multiselect ("All" = no filter)
 def _multiselect_is_all(sel):
     return sel is None or len(sel) == 0 or "All" in sel
 
 
-all_teams = ["All"] + sorted(df_seam_base[team_column].dropna().unique().tolist())
+all_teams = ["All"] + sorted(df_seam_base["BowlingTeam"].dropna().unique().tolist())
 
 row1 = st.columns(4)
 with row1[0]:
-    bowl_team_sel = st.multiselect("Bowling Team", all_teams, default=["All"])
+    bowl_team_sel = st.multiselect(
+        "Bowling Team", 
+        all_teams, 
+        default=["All"],
+        key="team_filter",
+        on_change=handle_all_selection,
+        args=("team_filter",)
+    )
 
+# 2. Dynamically filter batsmen options based on chosen team
 if _multiselect_is_all(bowl_team_sel):
-    df_for_bowlers = df_seam_base.copy()
+    df_bat_opts = df_raw
 else:
     teams_only = [t for t in bowl_team_sel if t != "All"]
-    df_for_bowlers = df_seam_base[df_seam_base[team_column].isin(teams_only)]
+    df_bat_opts = df_raw[df_raw["BowlingTeam"].isin(teams_only)]
 
-if "BowlerName" in df_for_bowlers.columns:
-    relative_bowlers = ["All"] + sorted(df_for_bowlers["BowlerName"].dropna().unique().tolist())
-else:
-    relative_bowlers = ["All"]
+# This defines the variable that was throwing the NameError
+bowler_options = ["All"] + sorted(df_bat_opts["BowlerName"].dropna().unique().tolist())
 
 with row1[1]:
-    bowler_sel = st.multiselect("Bowler Name", relative_bowlers, default=["All"])
+    bowler_sel = st.multiselect(
+        "Bowler Name", 
+        bowler_options, 
+        default=["All"],
+        key="batter_filter",
+        on_change=handle_all_selection,
+        args=("batter_filter",)
+    )
 
+# 3. Safely locate remaining data columns
 year_col = next((c for c in df_raw.columns if c.strip().lower() == "year"), None)
 ground_col = next((c for c in df_raw.columns if c.strip().lower() == "ground"), None)
 tour_col = next((c for c in df_raw.columns if c.strip().lower() == "tour"), None)
@@ -1089,7 +1095,14 @@ match_col = next((c for c in df_raw.columns if c.strip().lower() == "match"), No
 with row1[2]:
     if year_col:
         year_vals = sorted(df_raw[year_col].dropna().unique().astype(int).astype(str).tolist())
-        selected_years = st.multiselect("Year", ["All"] + year_vals, default=["All"])
+        selected_years = st.multiselect(
+            "Year", 
+            ["All"] + year_vals, 
+            default=["All"],
+            key="year_filter",
+            on_change=handle_all_selection,
+            args=("year_filter",)
+        )
     else:
         selected_years = ["All"]
         st.info("Year N/A")
@@ -1097,16 +1110,31 @@ with row1[2]:
 with row1[3]:
     if ground_col:
         venue_vals = sorted(df_raw[ground_col].dropna().unique().tolist())
-        selected_venues = st.multiselect("Venue", ["All"] + venue_vals, default=["All"])
+        selected_venues = st.multiselect(
+            "Venue", 
+            ["All"] + venue_vals, 
+            default=["All"],
+            key="venue_filter",
+            on_change=handle_all_selection,
+            args=("venue_filter",)
+        )
     else:
         selected_venues = ["All"]
         st.info("Venue N/A")
 
 row2 = st.columns(2)
+
 with row2[0]:
     if tour_col:
         tour_vals = sorted(df_raw[tour_col].dropna().astype(str).unique().tolist())
-        selected_tours = st.multiselect("Tour", ["All"] + tour_vals, default=["All"])
+        selected_tours = st.multiselect(
+            "Tour", 
+            ["All"] + tour_vals, 
+            default=["All"],
+            key="tour_filter",
+            on_change=handle_all_selection,
+            args=("tour_filter",)
+        )
     else:
         selected_tours = ["All"]
         st.caption("Tour N/A")
@@ -1114,10 +1142,18 @@ with row2[0]:
 with row2[1]:
     if match_col:
         match_vals = sorted(df_raw[match_col].dropna().astype(str).unique().tolist())
-        selected_matches = st.multiselect("Match", ["All"] + match_vals, default=["All"])
+        selected_matches = st.multiselect(
+            "Match", 
+            ["All"] + match_vals, 
+            default=["All"],
+            key="match_filter",
+            on_change=handle_all_selection,
+            args=("match_filter",)
+        )
     else:
         selected_matches = ["All"]
         st.caption("Match N/A")
+
 
 # 4. Apply Filters to the Base Seam Data
 df_filtered = df_seam_base.copy()
