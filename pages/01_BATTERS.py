@@ -316,7 +316,7 @@ def create_pitch_map(df_in, delivery_type):
 
     nw = df_in[df_in["Wicket"] == False].copy()
     runs = pd.to_numeric(nw.get("Runs", pd.Series(0, index=nw.index)), errors="coerce").fillna(0)
-    is_boundary = runs.isin([4, 6])
+    is_boundary = runs.isin([3.5, 7])
     pitch_boundaries = nw[is_boundary]
     pitch_others = nw[~is_boundary]
     pitch_wickets = df_in[df_in["Wicket"] == True]
