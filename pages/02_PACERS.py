@@ -1004,7 +1004,6 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-render_page_nav("pacers")
 
 # 1. CRITICAL: GET DATA AND CHECK FOR AVAILABILITY
 if 'data_df' not in st.session_state:
