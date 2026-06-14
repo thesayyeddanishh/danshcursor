@@ -21,12 +21,12 @@ FORMAT_KEYS: Tuple[str, ...] = (
 )
 
 FORMAT_LABELS: Dict[str, str] = {
-    "men_t20i": "Men's T20I",
-    "women_t20i": "Women's T20I",
+    "men_t20i": "Men's T20",
+    "women_t20i": "Women's T20",
     "men_odi": "Men's ODI",
     "women_odi": "Women's ODI",
-    "men_test": "Men's Test",
-    "men_test_aus": "Men's Test - AUS",
+    "men_test": "Men's Red Ball",
+    "men_test_aus": "Men's Red Ball - AUS",
 }
 
 
@@ -292,7 +292,7 @@ def filter_batter_length(df: pd.DataFrame, f3: str, cfg: FormatConfig) -> pd.Dat
     if f3 == "All":
         return df.copy()
     bx = df["BounceX"]
-    # Men's Test (AUS) must come before generic is_test — both have is_test=True.
+    # Men's Red Ball (AUS) must come before generic is_test — both have is_test=True.
     if cfg.key == "men_test_aus":
         if f3 == "FULL":
             return df[bx < 5.0].copy()
@@ -449,7 +449,7 @@ def spinner_view_types(cfg: FormatConfig) -> List[str]:
 # --- Page header / pitch-map helpers ---
 
 def format_banner_caps(cfg: FormatConfig) -> str:
-    """Bold caps line for active format (e.g. MEN'S T20I)."""
+    """Bold caps line for active format (e.g. Men's T20)."""
     return cfg.label.upper()
 
 
