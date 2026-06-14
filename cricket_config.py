@@ -439,9 +439,9 @@ def pacer_length_filter_options(cfg: FormatConfig) -> List[str]:
 
 def spinner_view_types(cfg: FormatConfig) -> List[str]:
     base = (
-        ["All", "Bowling Strike Rate By Length", "% by Lengths", "% /Turn (TURN)"]
+        ["All", "Bowling Strike Rate By Length", "% by Lengths", "Turn Direction"]
         if cfg.is_test
-        else ["All", "Economy By Length", "% by Lengths", "% /Turn (TURN)"]
+        else ["All", "Economy By Length", "% by Lengths", "Turn Direction"]
     )
     return base + list(SPINNERS_METRIC_VIEW_TYPES)
 
