@@ -23,8 +23,6 @@ from cricket_config import (
     FORMAT_BANNER_STYLE,
 )
 
-from page_nav import render_page_nav
-
 
 def rank_slice(
     df: pd.DataFrame,
@@ -121,8 +119,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
-render_page_nav("leaderboard")
 
 _cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
 _col_title_lb, _col_fmt_lb = st.columns([3.2, 1.2])
