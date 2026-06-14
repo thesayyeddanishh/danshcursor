@@ -1161,118 +1161,103 @@ def create_speed_metrics_bar(df_in, delivery_type):
 
     summary["Avg"] = summary["Avg"].fillna(0)
 
-    # -----------------------------
-    # Plot
-    # -----------------------------
-    metrics = ["Runs", "Dismissals", "Avg", "SR"]
+   # -----------------------------
+# Plot
+# -----------------------------
+metrics = ["Runs", "Dismissals", "Avg", "SR"]
 
-    fig = plt.figure(
-        figsize=(10, 10),
-        facecolor="white"
+fig = plt.figure(figsize=(11, 9), facecolor="white")
+
+# Outer border around entire chart
+fig.patch.set_edgecolor("black")
+fig.patch.set_linewidth(2)
+
+gs = fig.add_gridspec(
+    nrows=4,
+    ncols=1,
+    hspace=0.35
+)
+
+for idx, metric in enumerate(metrics):
+
+    ax = fig.add_subplot(gs[idx])
+
+    values = summary[metric].values
+    groups = summary.index.tolist()
+
+    y = np.arange(len(groups))
+
+    # Orange bars
+    ax.barh(
+        y,
+        values,
+        height=0.55,
+        color="#ff5000",
+        edgecolor="#ff5000"
     )
 
-    gs = fig.add_gridspec(
-        nrows=4,
-        ncols=1,
-        hspace=0.55
-    )
+    max_val = max(values) if max(values) > 0 else 1
 
-    for idx, metric in enumerate(metrics):
+    # Value labels
+    for ypos, val in zip(y, values):
 
-        ax = fig.add_subplot(gs[idx])
+        if metric in ["Avg", "SR"]:
+            label = f"{val:.0f}"
+        else:
+            label = f"{int(val)}"
 
-        values = summary[metric].values
-        groups = summary.index.tolist()
-
-        y = np.arange(len(groups))
-
-        # Hollow bars like sketch
-        ax.barh(
-            y,
-            values,
-            height=0.55,
-            facecolor="white",
-            edgecolor="black",
-            linewidth=1.5
-        )
-
-        max_val = max(values) if max(values) > 0 else 1
-
-        # Labels at end of bars
-        for ypos, val in zip(y, values):
-
-            if metric in ["Avg", "SR"]:
-                label = f"{val:.0f}"
-            else:
-                label = f"{int(val)}"
-
-            ax.text(
-                val + max_val * 0.05,
-                ypos,
-                label,
-                va="center",
-                ha="left",
-                fontsize=12,
-                fontweight="bold"
-            )
-
-        # Y labels
-        ax.set_yticks(y)
-        ax.set_yticklabels(
-            groups,
-            fontsize=11
-        )
-
-        ax.invert_yaxis()
-
-        # Metric title
         ax.text(
-            -0.28,
-            0.5,
-            metric,
-            transform=ax.transAxes,
-            fontsize=14,
-            fontweight="bold",
+            val + max_val * 0.04,
+            ypos,
+            label,
             va="center",
-            ha="right"
+            ha="left",
+            fontsize=14,
+            fontweight="bold"
         )
 
-        # Remove x-axis
-        ax.set_xticks([])
-        ax.tick_params(
-            axis="y",
-            length=0
-        )
-
-        # Clean styling
-        ax.spines["right"].set_visible(False)
-        ax.spines["bottom"].set_visible(False)
-
-        ax.spines["left"].set_visible(True)
-        ax.spines["left"].set_linewidth(1.2)
-
-        ax.spines["top"].set_visible(True)
-        ax.spines["top"].set_linewidth(1.2)
-
-        if idx == len(metrics) - 1:
-            ax.spines["bottom"].set_visible(True)
-            ax.spines["bottom"].set_linewidth(1.2)
-
-        ax.set_xlim(
-            0,
-            max_val * 1.35
-        )
-
-    fig.suptitle(
-        f"METRICS BY RELEASE SPEED v {delivery_type.upper()}",
-        fontsize=18,
-        fontweight="bold",
-        y=0.98
+    # Speed group labels
+    ax.set_yticks(y)
+    ax.set_yticklabels(
+        groups,
+        fontsize=13,
+        fontweight="normal"
     )
 
-    plt.tight_layout(rect=[0.08, 0.02, 1, 0.96])
+    ax.invert_yaxis()
 
-    return fig
+    # Metric labels (Runs, Avg, etc.)
+    ax.text(
+        -0.10,
+        0.5,
+        metric,
+        transform=ax.transAxes,
+        fontsize=16,
+        fontweight="bold",
+        va="center",
+        ha="right"
+    )
+
+    # Clean axes
+    ax.set_xticks([])
+    ax.tick_params(axis="y", length=0, pad=2)
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["bottom"].set_visible(False)
+
+    # Keep left spine only
+    ax.spines["left"].set_visible(True)
+    ax.spines["left"].set_linewidth(1.2)
+
+    ax.set_xlim(0, max_val * 1.35)
+
+# No internal title
+# No suptitle
+
+fig.tight_layout(rect=[0.05, 0.03, 0.98, 0.98])
+
+return fig
     
 #----------------------------------------
 # PAGE LAYOUT SETUP
