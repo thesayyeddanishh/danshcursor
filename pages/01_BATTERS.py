@@ -1132,27 +1132,24 @@ def create_speed_metrics_bar(df_in, delivery_type):
     # Finally, fill any remaining NaNs (0/0 cases) with 0
     summary["Avg"] = summary["Avg"].fillna(0)
 
-    # NEW: Create a completely independent figure
+    # 2. Force a completely clean slate
+    plt.clf()
+    plt.close('all')
+    
+    # 3. Create a clean figure with a fixed, wide layout
     fig = plt.figure(figsize=(16, 5))
     
-    # We define 4 distinct subplots explicitly
-    # This ignores any old structure and forces a new layout
-    for idx, metric in enumerate(["Runs", "Dismissals", "Avg", "SR"]):
+    metrics = ["Runs", "Dismissals", "Avg", "SR"]
+    
+    # 4. Independent plots
+    for idx, metric in enumerate(metrics):
         ax = fig.add_subplot(1, 4, idx + 1)
-        
-        # Plotting the Speed Groups on the Y-Axis
-        y_pos = np.arange(len(ordered_groups))
-        ax.barh(y_pos, summary[metric], color='#4A90E2', height=0.6)
-        
-        ax.set_title(metric, fontweight='bold')
-        ax.set_yticks(y_pos)
-        ax.set_yticklabels(ordered_groups if idx == 0 else [])
-        
-        # Grid and clean-up
+        ax.barh(ordered_groups, summary[metric], color='#4A90E2', height=0.6)
+        ax.set_title(metric, fontweight='bold', fontsize=12)
+        ax.invert_yaxis()
         ax.grid(axis='x', linestyle='--', alpha=0.3)
         ax.spines[['top', 'right']].set_visible(False)
-        ax.invert_yaxis()
-
+        
     plt.tight_layout()
     return fig
     
