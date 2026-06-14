@@ -1136,12 +1136,12 @@ def create_speed_metrics_bar(df_in, delivery_type):
     # Finally, fill any remaining NaNs (0/0 cases) with 0
     summary["Avg"] = summary["Avg"].fillna(0)
 
-    # 4. Plotting - Swapped Layout
+    # 4. Plotting - Optimized for Refresh
     bar_color = '#4A90E2'
     text_color = '#333333'
     
-    # Figure: 4 rows (one for each speed group), 4 columns (one for each metric)
-    # If you have 5 speed groups, change the 4 in (4, 4) to 5
+    # Force a fresh figure
+    plt.close('all') 
     num_groups = len(ordered_groups)
     fig, axes = plt.subplots(1, 4, figsize=(15, 0.7 * num_groups + 1.5), sharey=True)
     fig.patch.set_facecolor('white')
@@ -1160,7 +1160,7 @@ def create_speed_metrics_bar(df_in, delivery_type):
         ax.barh(y, vals, color=bar_color, edgecolor='none', height=height, zorder=2)
         ax.set_title(title, fontsize=12, fontweight='bold', color=text_color, pad=12)
         
-        # Labels outside the bars
+        # Adjust label visibility
         max_val = vals.max() if vals.max() > 0 else 1
         for i, v in enumerate(vals):
             ax.text(
@@ -1174,14 +1174,14 @@ def create_speed_metrics_bar(df_in, delivery_type):
         ax.invert_yaxis()
         ax.set_xlim(0, max_val * 1.35)
 
-    # Set Speed Groups as the Y-axis labels on the far left column
     axes[0].set_yticks(y)
     axes[0].set_yticklabels(ordered_groups, fontsize=11, color=text_color, fontweight='bold')
     axes[0].tick_params(axis='y', length=0)
     
     plt.tight_layout(pad=2.0)
+    fig.canvas.draw() # Force the draw
     return fig
-
+    
 #----------------------------------------
 # PAGE LAYOUT SETUP
 #----------------------------------------
