@@ -1108,7 +1108,7 @@ with row2[1]:
 
 
 # 4. Apply Filters to the Base spin Data
-df_filtered = df_seam_base.copy()
+df_filtered = df_spin_base.copy()
 
 if not _multiselect_is_all(bowl_team_sel):
         teams_only = [t for t in bowl_team_sel if t != "All"]
