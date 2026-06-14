@@ -104,19 +104,19 @@ def apply_match_phase_filter(df: pd.DataFrame, phase: str, cfg: FormatConfig) ->
     d["_over_num"] = over
     d = d.dropna(subset=["_over_num"])
     if cfg.is_odi:
-        if phase == "Powerplay (1-6)":
-            d = d[d["_over_num"] < 6]
+        if phase == "Powerplay (1-10)":
+            d = d[d["_over_num"] < 11]
         elif phase == "Middle (7-40)":
-            d = d[(d["_over_num"] >= 6) & (d["_over_num"] < 40)]
+            d = d[(d["_over_num"] >= 11) & (d["_over_num"] < 41)]
         elif phase == "Death (41-50)":
-            d = d[(d["_over_num"] >= 40) & (d["_over_num"] < 50)]
+            d = d[(d["_over_num"] >= 41) & (d["_over_num"] < 50)]
     else:
         if phase == "Powerplay (1-6)":
-            d = d[d["_over_num"] < 6]
+            d = d[d["_over_num"] < 7]
         elif phase == "Middle (7-16)":
-            d = d[(d["_over_num"] >= 6) & (d["_over_num"] < 16)]
+            d = d[(d["_over_num"] >= 7) & (d["_over_num"] < 17)]
         elif phase == "Death (17-20)":
-            d = d[d["_over_num"] >= 16]
+            d = d[d["_over_num"] >= 17]
     return d.drop(columns=["_over_num"])
 
 
