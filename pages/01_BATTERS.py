@@ -342,7 +342,7 @@ def create_pitch_map(df_in, delivery_type):
             ha="left",
             va="center",
             fontsize=8,
-            color="grey",
+            color="black",
             fontweight="bold",
         )
         p = int(pct_by_bin.get(Length, 0))
@@ -353,7 +353,7 @@ def create_pitch_map(df_in, delivery_type):
             ha="left",
             va="center",
             fontsize=16,
-            color="grey",
+            color="black",
             fontweight="bold",
         )
 
@@ -373,11 +373,11 @@ def create_pitch_map(df_in, delivery_type):
         ax.scatter(
             pitch_boundaries["BounceY"],
             pitch_boundaries["BounceX"],
-            s=60,
+            s=75,
             c="royalblue",
             edgecolor="white",
-            linewidths=1.0,
-            alpha=0.9,
+            linewidths=0.0,
+            alpha=1,
             label="Boundaries",
         )
     if not pitch_wickets.empty:
@@ -388,13 +388,14 @@ def create_pitch_map(df_in, delivery_type):
             c="red",
             edgecolor="white",
             linewidths=1.0,
-            alpha=0.95,
+            alpha=1,
             label="Wicket",
         )
 
-    ax.axvline(x=-0.18, color="#777777", linestyle="--", linewidth=1)
-    ax.axvline(x=0.18, color="#777777", linestyle="--", linewidth=1)
-    ax.axvline(x=0, color="#777777", linestyle="--", linewidth=0.8)
+    ax.axvline(x=-0.18, color="#777777", linestyle="-", linewidth=0.5)
+    ax.axvline(x=0.18, color="#777777", linestyle="-", linewidth=0.5)
+    ax.axvline(x=0, color="#777777", linestyle="-", linewidth=0.5)
+    ax.axvline(y=0, color="#777777", linestyle="--", linewidth=0.5)
 
     ax.set_xlim([-1.5, 1.5])
     ax.set_ylim([16.0, -4.0])
