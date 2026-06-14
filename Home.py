@@ -78,22 +78,22 @@ def process_upload(uploaded_file) -> bool:
 
 st.title("VR DANshboard")
 
-st.subheader("1. Select format (choose once per session before analysis)")
+st.subheader("1. Select format")
 fmt_labels = [FORMAT_LABELS[k] for k in FORMAT_KEYS]
 default_key = st.session_state.get("cricket_format", "men_t20i")
 default_idx = FORMAT_KEYS.index(default_key) if default_key in FORMAT_KEYS else 0
 choice = st.selectbox("Format", fmt_labels, index=default_idx, key="format_select_main")
 st.session_state["cricket_format"] = FORMAT_KEYS[fmt_labels.index(choice)]
 _cfg = resolve_format(st.session_state["cricket_format"])
-st.caption(f"Active: {_cfg.label} — {_cfg.sidebar_sub}")
+st.caption(f"Active: {_cfg.label}")
 
 with st.expander("Required CSV columns"):
     st.markdown(
         """
-* **General:** `Day`, `Innings`, `Over`, `Ball`, `BowlerName`, `BatsmanName`, `BowlingTeam`, `BattingTeam`
+* **General:** `Innings`, `Over`, `Ball`, `BowlerName`, `BatsmanName`, `BowlingTeam`, `BattingTeam`
 * **Handedness:** `IsBowlerRightHanded`, `IsBatsmanRightHanded`
 * **Results:** `Wicket`, `Runs`
-* **Coordinates:** bounce, interception, crease, stumps, release, landing as in your tracking export
+* **Coordinates:** 'Bounce X Y', 'Interception X Y Z', 'Crease Y Z', 'Stumps Y Z', 'Release Y Z', 'Landing X Y'
 * **Delivery:** `DeliveryType`, `ReleaseSpeed`, `Deviation`, `Swing`
 * **Match:** `Ground`, `Tour`, `Year`, `Match`
         """
