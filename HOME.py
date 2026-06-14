@@ -101,7 +101,7 @@ if uploaded_file is not None:
     if "data_df" not in st.session_state or uploaded_file.name != st.session_state.get("file_name"):
         process_upload(uploaded_file)
       
-st.info("Wait for the next line to turn Blue")
+st.write("Wait for the next line to turn blue after uploading")
 
 if "data_df" in st.session_state:
     df_loaded = st.session_state["data_df"]
