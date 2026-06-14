@@ -19,7 +19,14 @@ from cricket_config import (
     ordered_seam_keys,
     seam_speed_group,
     pacer_effectiveness_seam_order,
+    format_banner_caps,
+    FORMAT_BANNER_STYLE,
+    pitch_map_figsize,
+    pitch_bin_percentages,
+    add_crease_lateral_zone_background,
 )
+
+from page_nav import render_page_nav
 
 
 # --- CHART 3: PITCHMAP (BOUNCE LOCATION) ---
@@ -28,102 +35,109 @@ def create_pacer_pitch_map(df_in):
     PITCH_BINS = pitch_bins_for_format("Seam", cfg)
 
     if df_in.empty:
-        figsize = (3, 6) if cfg.is_test else (3, 3)
-        fig, ax = plt.subplots(figsize=figsize)
-        msg = "No data for Pacer Pitch Map" if cfg.is_test else "No data for Pa7er Pitch Map"
-        ax.text(0.5, 0.5, msg, ha="center", va="center", fontsize=12)
+        fw, fh = pitch_map_figsize(cfg, width=3.0)
+        fig, ax = plt.subplots(figsize=(fw, fh))
+        ax.text(0.5, 0.5, "No data for Pacer Pitch Map", ha="center", va="center", fontsize=12)
         ax.axis("off")
         return fig
 
-    # --- Data Filtering ---
+    nw = df_in[df_in["Wicket"] == False].copy()
+    runs = pd.to_numeric(nw.get("Runs", pd.Series(0, index=nw.index)), errors="coerce").fillna(0)
+    is_boundary = runs.isin([4, 6])
+    pitch_boundaries = nw[is_boundary]
+    pitch_others = nw[~is_boundary]
     pitch_wickets = df_in[df_in["Wicket"] == True]
-    pitch_non_wickets = df_in[df_in["Wicket"] == False]
 
-    # --- Chart Setup ---
-    figsize = (3, 5) if cfg.is_test else (4.5, 9)
-    fig, ax = plt.subplots(figsize=figsize)
-    ax.set_facecolor('white')
-    fig.patch.set_facecolor('white')
+    fig_w, fig_h = pitch_map_figsize(cfg, width=3.0)
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h))
+    ax.set_facecolor("white")
+    fig.patch.set_facecolor("white")
 
-    # --- 1. Add Zone Lines & Labels (Horizontal Lines) ---
-    
-    # Determine boundary Y values to draw lines (excluding the start of the lowest bin)
     boundary_y_values = sorted([v[0] for v in PITCH_BINS.values() if v[0] > -4.0], reverse=True)
-
     for y_val in boundary_y_values:
         ax.axhline(y=y_val, color="lightgrey", linewidth=1.0, linestyle="--")
 
-    # Add zone labels (Annotation)
+    pct_by_bin = pitch_bin_percentages(df_in, PITCH_BINS, bounce_col="BounceX")
     for length, bounds in PITCH_BINS.items():
         mid_y = (bounds[0] + bounds[1]) / 2
-        # Use ax.text for annotation, positioned on the far left (x=-1.45)
         ax.text(
-                x=-1.45, 
-                y=mid_y, 
-                s=length.upper(), 
-                ha='left', 
-                va='center', 
-                fontsize=8, 
-                color="grey", 
-                fontweight='bold'
-            )
+            x=-1.45,
+            y=mid_y,
+            s=str(length).upper(),
+            ha="left",
+            va="center",
+            fontsize=8,
+            color="grey",
+            fontweight="bold",
+        )
+        p = int(pct_by_bin.get(length, 0))
+        ax.text(
+            x=-1.45,
+            y=mid_y - 0.42,
+            s=f"{p}%",
+            ha="left",
+            va="center",
+            fontsize=16,
+            color="grey",
+            fontweight="bold",
+        )
 
-    
-    # --- 3. Plot Data (Scatter Traces) ---
-    
-    # Non-Wickets (light grey)
-    s_nw, s_w = (60, 90) if cfg.is_test else (100, 150)
-    ax.scatter(
-        pitch_non_wickets["BounceY"], pitch_non_wickets["BounceX"],
-        s=s_nw, 
-        c='#D3D3D3', 
-        edgecolor='white', 
-        linewidths=1.0, 
-        alpha=0.9,
-        label="No Wicket"
-    )
+    s_nw, s_b, s_w = ((60, 60, 90) if cfg.is_test else (100, 100, 150))
+    if not pitch_others.empty:
+        ax.scatter(
+            pitch_others["BounceY"],
+            pitch_others["BounceX"],
+            s=s_nw,
+            c="#D3D3D3",
+            edgecolor="white",
+            linewidths=1.0,
+            alpha=0.9,
+            label="Others",
+        )
+    if not pitch_boundaries.empty:
+        ax.scatter(
+            pitch_boundaries["BounceY"],
+            pitch_boundaries["BounceX"],
+            s=s_b,
+            c="royalblue",
+            edgecolor="white",
+            linewidths=1.0,
+            alpha=0.9,
+            label="Boundaries",
+        )
+    if not pitch_wickets.empty:
+        ax.scatter(
+            pitch_wickets["BounceY"],
+            pitch_wickets["BounceX"],
+            s=s_w,
+            c="red",
+            edgecolor="white",
+            linewidths=1.0,
+            alpha=0.95,
+            label="Wicket",
+        )
 
-    # Wickets (red)
-    ax.scatter(
-        pitch_wickets["BounceY"], pitch_wickets["BounceX"],
-        s=s_w, 
-        c='red', 
-        edgecolor='white', 
-        linewidths=1.0, 
-        alpha=0.95,
-        label="Wicket"
-    )
-    
-    # --- 2. Add Stump lines (Vertical Lines) ---
     lw = 1.0 if cfg.is_test else 0.5
     ax.axvline(x=-0.18, color="#777777", linestyle="-", linewidth=lw)
     ax.axvline(x=0.18, color="#777777", linestyle="-", linewidth=lw)
     ax.axvline(x=0, color="#777777", linestyle="-", linewidth=lw)
-    
-    # --- 4. Layout (Axis and Spines) ---
-    
-    # Set axis limits
-    ax.set_xlim([-1.5, 1.5])
-    # Reverse the axis to match the cricket visual (batter at bottom)
-    ax.set_ylim([16.0, -4.0]) 
 
-    # Hide all axis elements
+    ax.set_xlim([-1.5, 1.5])
+    ax.set_ylim([16.0, -4.0])
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_xlabel("")
     ax.set_ylabel("")
     ax.grid(False)
-    
-    # Hide axis spines (plot border)
-    spine_color = 'black'
+
+    spine_color = "black"
     spine_width = 0.5
-    for spine_name in ['left', 'top', 'bottom','right']:
+    for spine_name in ["left", "top", "bottom", "right"]:
         ax.spines[spine_name].set_visible(True)
         ax.spines[spine_name].set_color(spine_color)
         ax.spines[spine_name].set_linewidth(spine_width)
-        
+
     plt.tight_layout()
-    
     return fig
 
 # --- CHART 3b: PITCH LENGTH METRICS (BOWLER FOCUS) ---
@@ -132,118 +146,138 @@ def get_pacer_pitch_bins():
     cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
     return pitch_bins_for_format("Seam", cfg)
 def create_pacer_pitch_length_bars(df_in):
-    # Fixed size to accommodate three stacked charts comfortably
-    FIG_SIZE = (6, 12) 
-    
+    cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
+    FIG_SIZE = pitch_map_figsize(cfg, width=3.0)
+
     if df_in.empty:
         fig, ax = plt.subplots(figsize=FIG_SIZE)
-        ax.text(0.5, 0.5, "No Data for Pacer Pitch Length Comparison", ha='center', va='center', fontsize=12)
-        ax.axis('off')
+        ax.text(0.5, 0.5, "No Data for Pacer Pitch Length Comparison", ha="center", va="center", fontsize=12)
+        ax.axis("off")
         return fig
 
-    # Get the pitch bins and define order (Fixed for Pacer)
-    cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
     PITCH_BINS_DICT = get_pacer_pitch_bins()
     ordered_keys = ordered_seam_keys(cfg)
-    
-    # 1. Data Preparation
+
     def assign_pitch_length(x):
         for length, bounds in PITCH_BINS_DICT.items():
-            if bounds[0] <= x < bounds[1]: return length
+            if bounds[0] <= x < bounds[1]:
+                return length
         return None
 
     df_pitch = df_in.copy()
     df_pitch["PitchLength"] = df_pitch["BounceX"].apply(assign_pitch_length)
 
-    # 1. Aggregate data (Keep Dots if you need them elsewhere, otherwise you can remove that line)
-    df_summary = df_pitch.groupby("PitchLength").agg(
-        Runs=("Runs", "sum"), 
-        Wickets=("Wicket", lambda x: (x == True).sum()), 
-        Balls=("Wicket", "count")
-    ).reset_index().set_index("PitchLength").reindex(ordered_keys).fillna(0)
-    
-    # 2. White Ball Calculations
-    df_summary["Economy"] = df_summary.apply(lambda row: (row["Runs"] / row["Balls"] * 6) if row["Balls"] > 0 else 0.0, axis=1)
+    df_summary = (
+        df_pitch.groupby("PitchLength")
+        .agg(
+            Runs=("Runs", "sum"),
+            Wickets=("Wicket", lambda x: (x == True).sum()),
+            Balls=("Wicket", "count"),
+        )
+        .reset_index()
+        .set_index("PitchLength")
+        .reindex(ordered_keys)
+        .fillna(0)
+    )
 
-    # Bowling Average (Runs per Wicket)
+    df_summary["Economy"] = df_summary.apply(
+        lambda row: (row["Runs"] / row["Balls"] * 6) if row["Balls"] > 0 else 0.0, axis=1
+    )
     df_summary["Avg"] = df_summary.apply(
         lambda row: row["Runs"] / row["Wickets"] if row["Wickets"] > 0 else row["Runs"], axis=1
     )
-
-    # Bowling Strike Rate (Balls per Wicket)
     df_summary["SR"] = df_summary.apply(
         lambda row: row["Balls"] / row["Wickets"] if row["Wickets"] > 0 else row["Balls"], axis=1
     )
-    
-    # Categories for plotting (reversed for barh)
+
     categories = df_summary.index.tolist()[::-1]
-    
-    # 2. Chart Setup (3 Rows, 1 Column)
-    fig, axes = plt.subplots(3, 1, figsize=FIG_SIZE, sharey=True) 
-    plt.subplots_adjust(hspace=0.5) # Reduced hspace from 5 to 0.5 for better spacing
+    fig, axes = plt.subplots(3, 1, figsize=FIG_SIZE, sharey=True)
+    plt.subplots_adjust(hspace=0.4 if cfg.is_test else 0.45)
 
-    # --- UPDATED: Metrics and Titles (Economy, Average, Strike Rate) ---
-    metrics = ["Economy", "Avg", "SR"]
-    titles = ["Economy", "Bowling Average", "Bowling Strike Rate"]
+    if cfg.is_test:
+        metrics = ["Wickets", "Avg", "SR"]
+        titles = ["Wickets", "Bowling Average", "Bowling Strike Rate"]
+        max_w = df_summary["Wickets"].max() * 1.2 if df_summary["Wickets"].max() > 0 else 10
+        max_avg = df_summary["Avg"].max() * 1.2 if df_summary["Avg"].max() > 0 else 50
+        max_sr = df_summary["SR"].max() * 1.2 if df_summary["SR"].max() > 0 else 40
+        xlim_limits = {"Wickets": (0, max_w), "Avg": (0, max_avg), "SR": (0, max_sr)}
+    else:
+        metrics = ["Wickets", "Economy", "Avg"]
+        titles = ["Wickets", "Economy", "Bowling Average"]
+        max_w = df_summary["Wickets"].max() * 1.2 if df_summary["Wickets"].max() > 0 else 10
+        max_eco = df_summary["Economy"].max() * 1.2 if df_summary["Economy"].max() > 0 else 12
+        max_avg = df_summary["Avg"].max() * 1.2 if df_summary["Avg"].max() > 0 else 50
+        xlim_limits = {"Wickets": (0, max_w), "Economy": (0, max_eco), "Avg": (0, max_avg)}
 
-    # Dynamic limits for scaling
-    max_eco = df_summary["Economy"].max() * 1.2 if df_summary["Economy"].max() > 0 else 12
-    max_avg = df_summary["Avg"].max() * 1.2 if df_summary["Avg"].max() > 0 else 50
-    max_sr = df_summary["SR"].max() * 1.2 if df_summary["SR"].max() > 0 else 40
-    
-    xlim_limits = {
-        "Economy": (0, max_eco),
-        "Avg": (0, max_avg),
-        "SR": (0, max_sr)
-    }
-
-    # --- Plotting Loop ---
     for i, ax in enumerate(axes):
         metric = metrics[i]
         title = titles[i]
-        
-        values = df_summary[metric].values[::-1] 
-        ax.set_xlim(xlim_limits[metric])
-        
-        # Horizontal Bar Chart
-        ax.barh(categories, values, height=0.8, color='#ff5000', zorder=5, alpha=1.0)
-        
-        # --- UPDATED: Annotations for Avg and SR ---
-        for j, (cat, val) in enumerate(zip(categories, values)):
-            if metric == "Economy":
-                label = f"{val:.1f}"
-            elif metric == "Avg":
-                label = f"{val:.1f}" # One decimal for Bowling Average
-            else: # SR
-                label = f"{val:.1f}" # One decimal for Bowling Strike Rate
-            
-            ax.text(val, j, label, 
-                    ha='left', va='center', 
-                    fontsize=15, fontweight='bold', color='black',
-                    bbox=dict(facecolor='White', alpha=0.8, edgecolor='none', pad=5),
-                    zorder=4)
+        values = df_summary[metric].values[::-1]
+        ax.barh(categories, values, height=0.49, color="#ff5000", zorder=3, alpha=0.9)
 
-        # --- Formatting ---
-        ax.set_title(title, fontsize=12, fontweight='bold', pad=2, loc='left')
-        ax.set_facecolor('white')
-        ax.tick_params(axis='x', labelsize=12)
-        ax.tick_params(axis='y', length=0) 
+        if cfg.is_test:
+            ax.text(
+                0,
+                1.05,
+                title,
+                transform=ax.transAxes,
+                fontsize=12,
+                fontweight="bold",
+                va="bottom",
+                ha="left",
+                color="black",
+            )
+        else:
+            ax.set_title(title, fontsize=10, fontweight="bold", pad=0, loc="left")
+
+        for j, (cat, val) in enumerate(zip(categories, values)):
+            if metric == "Wickets":
+                label = f"{int(val)}"
+            elif metric == "Economy":
+                label = f"{val:.1f}"
+            else:
+                label = f"{val:.1f}"
+
+            ax.text(
+                val,
+                j,
+                label,
+                ha="left",
+                va="center",
+                fontsize=11 if cfg.is_test else 9,
+                fontweight="bold",
+                color="black",
+                bbox=dict(facecolor="White", alpha=0.8, edgecolor="none", pad=2 if cfg.is_test else 2),
+                zorder=4,
+            )
+
+        ax.set_facecolor("white")
+        ax.tick_params(axis="x", labelsize=8)
+        ax.tick_params(axis="y", length=0)
 
         if i == 2:
-            ax.set_yticks(np.arange(len(categories)), labels=[c.upper() for c in categories], fontsize=9)
+            ax.set_yticks(
+                np.arange(len(categories)),
+                labels=[c.upper() for c in categories],
+                fontsize=8 if cfg.is_test else 8,
+            )
         else:
-            ax.set_yticks(np.arange(len(categories)), labels=[''] * len(categories))
-            
-        ax.xaxis.grid(False) 
+            ax.set_yticks(np.arange(len(categories)), labels=[""] * len(categories))
+
+        ax.xaxis.grid(False)
         ax.yaxis.grid(False)
-        ax.set_xticks([]) 
-        
-        spine_color = 'lightgray'
-        for spine_name in ['left', 'right', 'top', 'bottom']:
+        ax.set_xticks([])
+        if cfg.is_test:
+            ax.set_xlim(0, xlim_limits[metric][1] * 1.15)
+        else:
+            ax.set_xlim(0, xlim_limits[metric][1])
+
+        spine_color = "lightgray"
+        for spine_name in ["left", "right", "top", "bottom"]:
             ax.spines[spine_name].set_visible(True)
             ax.spines[spine_name].set_color(spine_color)
             ax.spines[spine_name].set_linewidth(1.0)
-            
+
     plt.tight_layout(pad=0.5)
     return fig
     
@@ -317,25 +351,56 @@ def create_pacer_crease_beehive(df_in, handedness_label): # Renamed function and
 
     # -----------------------------------------------------------
     ## --- 2. CHART 2a: CREASE BEEHIVE (ax_bh) ---
-    
+    add_crease_lateral_zone_background(ax_bh, zorder=0)
+
     # --- Traces ---
-    ax_bh.scatter(regular_balls["CreaseY"], regular_balls["CreaseZ"], s=40, c='lightgrey', edgecolor='white', linewidths=1.0, alpha=0.95, label="Regular Ball")
-    ax_bh.scatter(boundaries["CreaseY"], boundaries["CreaseZ"], s=80, c='royalblue', edgecolor='white', linewidths=1.0, alpha=0.95, label="Boundary")
-    ax_bh.scatter(wickets["CreaseY"], wickets["CreaseZ"], s=80, c='red', edgecolor='white', linewidths=1.0, alpha=0.95, label="Wicket")
+    ax_bh.scatter(
+        regular_balls["CreaseY"],
+        regular_balls["CreaseZ"],
+        s=40,
+        c="lightgrey",
+        edgecolor="white",
+        linewidths=1.0,
+        alpha=0.95,
+        label="Regular Ball",
+        zorder=3,
+    )
+    ax_bh.scatter(
+        boundaries["CreaseY"],
+        boundaries["CreaseZ"],
+        s=80,
+        c="royalblue",
+        edgecolor="white",
+        linewidths=1.0,
+        alpha=0.95,
+        label="Boundary",
+        zorder=4,
+    )
+    ax_bh.scatter(
+        wickets["CreaseY"],
+        wickets["CreaseZ"],
+        s=80,
+        c="red",
+        edgecolor="white",
+        linewidths=1.0,
+        alpha=0.95,
+        label="Wicket",
+        zorder=5,
+    )
 
     # --- Reference Lines ---
-    ax_bh.axvline(x=-0.18, color="grey", linestyle="--", linewidth=0.5) 
-    ax_bh.axvline(x=0.18, color="grey", linestyle="--", linewidth=0.5)
-    ax_bh.axvline(x=0, color="grey", linestyle="--", linewidth=0.5) 
-    ax_bh.axvline(x=-0.92, color="grey", linestyle="-", linewidth=0.5) 
-    ax_bh.axvline(x=0.92, color="grey", linestyle="-", linewidth=0.5)
-    ax_bh.axhline(y=0.78, color="grey", linestyle="-", linewidth=0.5)
+    ax_bh.axvline(x=-0.18, color="grey", linestyle="--", linewidth=0.5, zorder=2)
+    ax_bh.axvline(x=0.18, color="grey", linestyle="--", linewidth=0.5, zorder=2)
+    ax_bh.axvline(x=0, color="grey", linestyle="--", linewidth=0.5, zorder=2)
+    ax_bh.axvline(x=-0.92, color="green", linestyle="--", linewidth=2.2, zorder=2)
+    ax_bh.axvline(x=0.92, color="green", linestyle="--", linewidth=2.2, zorder=2)
+    ax_bh.axhline(y=0.78, color="grey", linestyle="-", linewidth=0.5, zorder=2)
 
     # --- Annotation ---
-    ax_bh.text(-1.5, 0.78, "Stump line", ha='left', va='bottom', fontsize=8, color="grey", transform=ax_bh.transData)
-    
+    ax_bh.text(-0.98, 0.78, "Stump line", ha="left", va="bottom", fontsize=8, color="grey", transform=ax_bh.transData)
+
     # --- Formatting ---
-    ax_bh.set_xlim([-2, 2])
+    ax_bh.set_xlim([-1, 1])
     ax_bh.set_ylim([0, 2])
     ax_bh.set_aspect('equal', adjustable='box')
     ax_bh.set_xticks([]); ax_bh.set_yticks([]); ax_bh.grid(False)
@@ -760,43 +825,59 @@ def create_pacer_speed_effectiveness_3col(df_in, handedness_label):
 
     # 3. Plotting (1 row, 3 columns)
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(9, 2.89), sharey=True)
-    plt.subplots_adjust(wspace=0.3) 
-    
+    plt.subplots_adjust(wspace=0.3)
+
     y = np.arange(len(ordered_groups))
     height = 0.5
-    color_pacer = '#ff5000'
+    color_pacer = "#ff5000"
 
     # --- Column 1: Economy ---
-    ax1.barh(y, summary["Eco"], color=color_pacer, edgecolor='white', height=height)
-    ax1.set_title("Economy", fontsize=12, fontweight='bold')
+    ax1.barh(y, summary["Eco"], color=color_pacer, edgecolor="white", height=height)
+    ax1.set_title("Economy", fontsize=14, fontweight="bold")
     ax1.set_yticks(y)
-    ax1.set_yticklabels(ordered_groups, fontsize=11, fontweight='bold')
+    ax1.set_yticklabels(ordered_groups, fontsize=13, fontweight="bold")
     for i, v in enumerate(summary["Eco"]):
-        ax1.text(v + 0.2, i, f'{v:.1f}', va='center', fontweight='bold', fontsize=10)
+        ax1.text(v + 0.2, i, f"{v:.1f}", va="center", fontweight="bold", fontsize=12)
 
     # --- Column 2: Bowling Strike Rate (SR) / Balls ---
-    ax2.barh(y, summary["SR"], color=color_pacer, edgecolor='white', height=height)
-    ax2.set_title("SR", fontsize=12, fontweight='bold')
+    ax2.barh(y, summary["SR"], color=color_pacer, edgecolor="white", height=height)
+    ax2.set_title("SR", fontsize=14, fontweight="bold")
     for i, (idx, row) in enumerate(summary.iterrows()):
         val = row["SR"]
-        # If no wickets, display total balls as an integer
         label = f"{int(row['Balls'])} B" if row["Wickets"] == 0 else f"{val:.1f}"
-        ax2.text(val + 1, i, label, va='center', fontweight='bold', fontsize=10)
+        ax2.text(val + 1, i, label, va="center", fontweight="bold", fontsize=12)
 
     # --- Column 3: Bowling Average (Avg) / Runs ---
-    ax3.barh(y, summary["Avg"], color=color_pacer, edgecolor='white', height=height)
-    ax3.set_title("Avg", fontsize=12, fontweight='bold')
+    ax3.barh(y, summary["Avg"], color=color_pacer, edgecolor="white", height=height)
+    ax3.set_title("Avg", fontsize=14, fontweight="bold")
     for i, (idx, row) in enumerate(summary.iterrows()):
         val = row["Avg"]
-        # If no wickets, display total runs as an integer
         label = f"{int(row['Runs'])} R" if row["Wickets"] == 0 else f"{val:.1f}"
-        ax3.text(val + 1, i, label, va='center', fontweight='bold', fontsize=10)
+        ax3.text(val + 1, i, label, va="center", fontweight="bold", fontsize=12)
 
     # Formatting
     for ax in [ax1, ax2, ax3]:
-        ax.spines[['top', 'right', 'bottom']].set_visible(False)
+        ax.spines[["top", "right", "bottom"]].set_visible(False)
         ax.xaxis.set_visible(False)
-        ax.invert_yaxis() 
+        ax.invert_yaxis()
+
+    plt.tight_layout(pad=0.35)
+    fig.canvas.draw()
+    p0 = ax1.get_position()
+    p2 = ax3.get_position()
+    pad_x = 0.012
+    pad_y = 0.02
+    border_rect = patches.Rectangle(
+        (p0.x0 - pad_x, p0.y0 - pad_y),
+        (p2.x1 - p0.x0) + 2 * pad_x,
+        (p0.y1 - p0.y0) + 2 * pad_y,
+        facecolor="none",
+        edgecolor="black",
+        linewidth=0.6,
+        transform=fig.transFigure,
+        clip_on=False,
+    )
+    fig.patches.append(border_rect)
 
     return fig
     
@@ -920,13 +1001,14 @@ st.markdown(
     """
     <style>
     section[data-testid="stSidebar"] {
-        width: 200px !important; 
+        width: 200px !important;
     }
-    <style>
+    </style>
     """,
     unsafe_allow_html=True,
 )
-    
+render_page_nav("pacers")
+
 # 1. CRITICAL: GET DATA AND CHECK FOR AVAILABILITY
 if 'data_df' not in st.session_state:
     st.error("Please go back to the **Home** page and upload the data first to begin the analysis.")
@@ -934,36 +1016,39 @@ if 'data_df' not in st.session_state:
     
 df_raw = st.session_state['data_df']
 _cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
-with st.sidebar:
-    st.markdown(f"**{_cfg.sidebar_title}**")
-    st.caption(_cfg.sidebar_sub)
-    st.caption(_cfg.label)
-# 1. Define columns with appropriate widths
-col_title_space, col_legend, col_dataname = st.columns([1, 2.5, 1.5]) 
+
+col_title_space, col_file, col_format_banner, col_legend = st.columns([2.6, 1.5, 2.8, 2.1])
 
 with col_title_space:
     st.title("PACERS")
 
-with col_legend:
-    legend_markdown = """
-    <p style='font-size: 16px; margin-top: 30px;'>
-        <span style='color: red; font-size: 20px;'>&#9679;</span> Wickets &nbsp;&nbsp;&nbsp; 
-        <span style='color: royalblue; font-size: 20px;'>&#9679;</span> Boundaries &nbsp;&nbsp;&nbsp; 
-        <span style='color: lightgrey; font-size: 20px;'>&#9679;</span> Others
-    </p>
-    """
-    st.markdown(legend_markdown, unsafe_allow_html=True)
-
-with col_dataname:
-    # Use the variable defined in columns: col_dataname
-    file_name = st.session_state.get('file_name', 'N/A')
-    # Added a div with margin-top to align vertically with the legend
-    st.markdown(f"""
+with col_file:
+    file_name = st.session_state.get("file_name", "N/A")
+    st.markdown(
+        f"""
         <div style='margin-top: 35px; text-align: right;'>
             <span style='color: grey; font-size: 14px;'>File: </span>
             <code style='font-size: 14px;'>{file_name}</code>
         </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
+
+with col_format_banner:
+    st.markdown(
+        f'<div style="margin-top: 28px; text-align: right; width: 100%;"><span style="{FORMAT_BANNER_STYLE}">{format_banner_caps(_cfg)}</span></div>',
+        unsafe_allow_html=True,
+    )
+
+with col_legend:
+    legend_markdown = """
+    <p style='font-size: 16px; margin-top: 30px; text-align: right;'>
+        <span style='color: red; font-size: 20px;'>&#9679;</span> Wickets &nbsp;&nbsp;&nbsp;
+        <span style='color: royalblue; font-size: 20px;'>&#9679;</span> Boundaries &nbsp;&nbsp;&nbsp;
+        <span style='color: lightgrey; font-size: 20px;'>&#9679;</span> Others
+    </p>
+    """
+    st.markdown(legend_markdown, unsafe_allow_html=True)
     
 # Ensure columns exist before attempting to convert them
 if "BatsmanName" in df_raw.columns:
@@ -982,80 +1067,100 @@ else:
     team_column = "BattingTeam" 
     st.warning("The 'BowlingTeam' column was not found. Displaying all Batting Teams as a fallback.")
 
-# 3. FILTERS (Bowling Team, Bowler, and Innings)
-filter_col1, filter_col2, filter_col3, filter_col4 = st.columns(4) 
+# 3. FILTERS — multiselect ("All" = no filter)
+def _multiselect_is_all(sel):
+    return sel is None or len(sel) == 0 or "All" in sel
 
-# --- Render Bowling Team Filter (Col 1) ---
+
 all_teams = ["All"] + sorted(df_seam_base[team_column].dropna().unique().tolist())
-with filter_col1:
-    bowl_team = st.selectbox("Bowling Team", all_teams, index=0)
 
-# --- Determine Bowlers based on selected Team ---
-df_for_bowlers = df_seam_base.copy()
+row1 = st.columns(4)
+with row1[0]:
+    bowl_team_sel = st.multiselect("Bowling Team", all_teams, default=["All"])
 
-if bowl_team != "All":
-    # Filter the DataFrame used for populating the bowler list
-    df_for_bowlers = df_for_bowlers[df_for_bowlers[team_column] == bowl_team]
+if _multiselect_is_all(bowl_team_sel):
+    df_for_bowlers = df_seam_base.copy()
+else:
+    teams_only = [t for t in bowl_team_sel if t != "All"]
+    df_for_bowlers = df_seam_base[df_seam_base[team_column].isin(teams_only)]
 
 if "BowlerName" in df_for_bowlers.columns:
-    # Generate the list of bowlers from the team-filtered DataFrame
     relative_bowlers = ["All"] + sorted(df_for_bowlers["BowlerName"].dropna().unique().tolist())
 else:
     relative_bowlers = ["All"]
-    
-# --- Render Bowler Name Filter (Col 2) ---
-with filter_col2:
-    bowler = st.selectbox("Bowler Name", relative_bowlers, index=0)
 
-# --- Render Inningss Filter (Col 3) ---
-# Find the actual year column case-insensitively
-year_col = next((c for c in df_raw.columns if c.strip().lower() == 'year'), None)
-# Find the actual ground column case-insensitively
-ground_col = next((c for c in df_raw.columns if c.strip().lower() == 'ground'), None)
+with row1[1]:
+    bowler_sel = st.multiselect("Bowler Name", relative_bowlers, default=["All"])
 
-# 3. Year Filter (in column 3)
-if year_col:
-    year_options = ["All"] + sorted(df_raw[year_col].dropna().unique().astype(int).astype(str).tolist())
-    with filter_col3:
-        selected_year = st.selectbox("Year", year_options, index=0)
-else:
-    selected_year = "All"
-    with filter_col3:
-        st.info("Year filter unavailable.")
+year_col = next((c for c in df_raw.columns if c.strip().lower() == "year"), None)
+ground_col = next((c for c in df_raw.columns if c.strip().lower() == "ground"), None)
+tour_col = next((c for c in df_raw.columns if c.strip().lower() == "tour"), None)
+match_col = next((c for c in df_raw.columns if c.strip().lower() == "match"), None)
 
-# 4. Venue Filter (in column 4)
-if ground_col:
-    venue_options = ["All"] + sorted(df_raw[ground_col].dropna().unique().tolist())
-    with filter_col4:
-        selected_venue = st.selectbox("Venue", venue_options, index=0)
-else:
-    selected_venue = "All"
-    with filter_col4:
-        st.info("Venue filter unavailable.")
+with row1[2]:
+    if year_col:
+        year_vals = sorted(df_raw[year_col].dropna().unique().astype(int).astype(str).tolist())
+        selected_years = st.multiselect("Year", ["All"] + year_vals, default=["All"])
+    else:
+        selected_years = ["All"]
+        st.info("Year N/A")
+
+with row1[3]:
+    if ground_col:
+        venue_vals = sorted(df_raw[ground_col].dropna().unique().tolist())
+        selected_venues = st.multiselect("Venue", ["All"] + venue_vals, default=["All"])
+    else:
+        selected_venues = ["All"]
+        st.info("Venue N/A")
+
+row2 = st.columns(2)
+with row2[0]:
+    if tour_col:
+        tour_vals = sorted(df_raw[tour_col].dropna().astype(str).unique().tolist())
+        selected_tours = st.multiselect("Tour", ["All"] + tour_vals, default=["All"])
+    else:
+        selected_tours = ["All"]
+        st.caption("Tour N/A")
+
+with row2[1]:
+    if match_col:
+        match_vals = sorted(df_raw[match_col].dropna().astype(str).unique().tolist())
+        selected_matches = st.multiselect("Match", ["All"] + match_vals, default=["All"])
+    else:
+        selected_matches = ["All"]
+        st.caption("Match N/A")
 
 # 4. Apply Filters to the Base Seam Data
 df_filtered = df_seam_base.copy()
 
-# Apply Team Filter
-if bowl_team != "All":
-    df_filtered = df_filtered[df_filtered[team_column] == bowl_team]
-    
-# Apply Bowler Filter (This uses the value selected in the relative dropdown)
-if bowler != "All":
+if not _multiselect_is_all(bowl_team_sel):
+    df_filtered = df_filtered[df_filtered[team_column].isin([t for t in bowl_team_sel if t != "All"])]
+
+if not _multiselect_is_all(bowler_sel):
     if "BowlerName" in df_filtered.columns:
-        df_filtered = df_filtered[df_filtered["BowlerName"] == bowler]
+        df_filtered = df_filtered[df_filtered["BowlerName"].isin([b for b in bowler_sel if b != "All"])]
     else:
         st.warning("BowlerName column not found for filtering.")
 
-# Apply Year Filter cleanly matching the found column name
-    actual_year_col = next((c for c in df_filtered.columns if c.strip().lower() == 'year'), None)
-    if selected_year != "All" and actual_year_col:
-        df_filtered = df_filtered[df_filtered[actual_year_col].astype(int) == int(selected_year)]
-        
-# Apply Venue Filter cleanly matching the found column name
-    actual_ground_col = next((c for c in df_filtered.columns if c.strip().lower() == 'ground'), None)
-    if selected_venue != "All" and actual_ground_col:
-        df_filtered = df_filtered[df_filtered[actual_ground_col] == selected_venue]
+yc = next((c for c in df_filtered.columns if c.strip().lower() == "year"), None)
+if yc and not _multiselect_is_all(selected_years):
+    years = [int(y) for y in selected_years if y != "All"]
+    df_filtered = df_filtered[df_filtered[yc].astype(int).isin(years)]
+
+gc = next((c for c in df_filtered.columns if c.strip().lower() == "ground"), None)
+if gc and not _multiselect_is_all(selected_venues):
+    venues = [v for v in selected_venues if v != "All"]
+    df_filtered = df_filtered[df_filtered[gc].isin(venues)]
+
+tc = next((c for c in df_filtered.columns if c.strip().lower() == "tour"), None)
+if tc and not _multiselect_is_all(selected_tours):
+    tours = [t for t in selected_tours if t != "All"]
+    df_filtered = df_filtered[df_filtered[tc].astype(str).isin(tours)]
+
+mc = next((c for c in df_filtered.columns if c.strip().lower() == "match"), None)
+if mc and not _multiselect_is_all(selected_matches):
+    matches = [m for m in selected_matches if m != "All"]
+    df_filtered = df_filtered[df_filtered[mc].astype(str).isin(matches)]
 
 # =========================================================
 # 5. SPLIT AND DISPLAY CHARTS (RHB vs LHB) 🏏

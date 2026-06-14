@@ -16,12 +16,42 @@ from cricket_config import (
     pacer_length_filter_options,
     spinner_view_types,
     batter_sr_or_avg_label,
+    PACERS_METRIC_VIEW_TYPES,
+    SPINNERS_METRIC_VIEW_TYPES,
+    hitting_stumps_mask,
+    format_banner_caps,
+    FORMAT_BANNER_STYLE,
 )
+
+from page_nav import render_page_nav
+
+
+def rank_slice(
+    df: pd.DataFrame,
+    by: str,
+    *,
+    higher_is_better: bool,
+    bottom: bool,
+    n: int = 10,
+) -> pd.DataFrame:
+    """Top N = best first; Bottom N = worst first (flip sort direction)."""
+    if df is None or df.empty:
+        return df
+    asc = not higher_is_better
+    if bottom:
+        asc = not asc
+    return df.sort_values(by=by, ascending=asc, na_position="last").head(n)
+
+
+st.set_page_config(layout="wide", page_title="Leaderboard")
 
 # --- ADVANCED DASHBOARD THEME CSS ---
 st.markdown(
     """
     <style>
+        section[data-testid="stSidebar"] {
+            width: 200px !important;
+        }
         /* Global Header Typography - Safe Layout to prevent clipping */
         h1 {
             font-weight: 800 !important;
@@ -92,8 +122,17 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Header Section
-st.title("LEADERBOARD")
+render_page_nav("leaderboard")
+
+_cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
+_col_title_lb, _col_fmt_lb = st.columns([3.2, 1.2])
+with _col_title_lb:
+    st.title("LEADERBOARD")
+with _col_fmt_lb:
+    st.markdown(
+        f'<div style="margin-top: 28px; text-align: right; width: 100%;"><span style="{FORMAT_BANNER_STYLE}">{format_banner_caps(_cfg)}</span></div>',
+        unsafe_allow_html=True,
+    )
 st.write("---")
 
 # --- 1. SESSION STATE DATA CHECK ---
@@ -103,12 +142,14 @@ else:
     # Safely extract and copy the dataframe
     df_raw = st.session_state['data_df'].copy()
     df_raw.columns = df_raw.columns.str.strip()
-    cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
+    cfg = _cfg
     
     # Clean and explicitly prepare data types for accurate filtering
     df_raw["ReleaseSpeed"] = pd.to_numeric(df_raw["ReleaseSpeed"], errors="coerce")
     df_raw["BounceX"] = pd.to_numeric(df_raw["BounceX"], errors="coerce")
     df_raw["Deviation"] = pd.to_numeric(df_raw["Deviation"], errors="coerce")
+    if "Swing" in df_raw.columns:
+        df_raw["Swing"] = pd.to_numeric(df_raw["Swing"], errors="coerce")
     df_raw["Wicket"] = df_raw["Wicket"].astype(bool)
     df_raw["Runs"] = pd.to_numeric(df_raw["Runs"], errors="coerce").fillna(0)
     
@@ -119,7 +160,7 @@ else:
     # ------------------------------------------------------------------
     # --- SPLIT SCREEN LAYOUT DESIGN ---
     # ------------------------------------------------------------------
-    main_display_col, filter_panel_col = st.columns([3.1, 1], gap="large")
+    main_display_col, filter_panel_col = st.columns([7, 1], gap="large")
 
     # Objects to hold our conditional data slice
     df_filtered = pd.DataFrame()
@@ -133,6 +174,9 @@ else:
         
         # Filter 1: Player Role Selection
         f1 = st.selectbox("Select Player Role", ["BATTERS", "PACERS", "SPINNERS"])
+
+        f_rank = st.selectbox("Leaderboard rank", ["Top 10", "Bottom 10"])
+        want_bottom = f_rank == "Bottom 10"
         
         # Shared Filter 2: Match Phase Filter (Overs) — T20I/ODI; hidden phases for Test
         phase_opts = match_phase_options(cfg)
@@ -182,6 +226,10 @@ else:
                 filter_label = f"Pace ({f3} kph)"
                 df_filtered = filter_pacer_pace(df_role_base, f3, cfg)
 
+            elif f2 in PACERS_METRIC_VIEW_TYPES:
+                df_filtered = df_role_base.copy()
+                filter_label = f2
+
             min_balls = st.number_input("Minimum balls bowled", min_value=1, value=10, step=1)
 
         elif f1 == "SPINNERS":
@@ -220,13 +268,18 @@ else:
                 elif f3 == "Turn Right":
                     df_filtered = df_role_base[df_role_base["Deviation"] > 0.1]
 
+            elif f2 in SPINNERS_METRIC_VIEW_TYPES:
+                df_filtered = df_role_base.copy()
+                filter_label = f2
+
             min_balls = st.number_input("Minimum balls bowled", min_value=1, value=10, step=1)
 
     # ==================================================================
     # STEP 3: EXECUTE CALCULATIONS & RENDER LEADERBOARDS ON LEFT SIDE
     # ==================================================================
     with main_display_col:
-        
+        rank_label = "Bottom 10" if want_bottom else "Top 10"
+
         # --- RENDER ENGINE: BATTERS ---
         if f1 == "BATTERS":
             if not df_filtered.empty:
@@ -240,12 +293,14 @@ else:
                     leaderboard = leaderboard[leaderboard["Dismissals"] > 0]
                     if not leaderboard.empty:
                         leaderboard["Average"] = leaderboard["Runs"] / leaderboard["Dismissals"]
-                        leaderboard = leaderboard.sort_values(by="Average", ascending=False).head(10)
+                        leaderboard = rank_slice(
+                            leaderboard, "Average", higher_is_better=True, bottom=want_bottom
+                        )
                         leaderboard["Average"] = leaderboard["Average"].round(1)
                         leaderboard["Runs"] = leaderboard["Runs"].astype(int)
                         leaderboard.columns = ["BATSMAN NAME", "RUNS", "BALLS FACED", "DISMISSALS", "AVERAGE"]
                         phase_note = "" if cfg.is_test else f"Phase: <b>{f_overs}</b> | "
-                        st.subheader(f"Top 10 Batters by Average vs {filter_label}")
+                        st.subheader(f"{rank_label} Batters by Average vs {filter_label}")
                         st.markdown(
                             f'<div class="filter-caption">Applied Filters: {phase_note}Minimum <b>{min_balls} Balls Faced</b></div>',
                             unsafe_allow_html=True,
@@ -279,14 +334,16 @@ else:
 
                     if not leaderboard.empty:
                         leaderboard["Strike Rate"] = (leaderboard["Runs"] / leaderboard["Balls_Faced"]) * 100
-                        leaderboard = leaderboard.sort_values(by="Strike Rate", ascending=False).head(10)
+                        leaderboard = rank_slice(
+                            leaderboard, "Strike Rate", higher_is_better=True, bottom=want_bottom
+                        )
 
                         leaderboard["Strike Rate"] = leaderboard["Strike Rate"].round(1)
                         leaderboard["Runs"] = leaderboard["Runs"].astype(int)
 
                         leaderboard.columns = ["Batter", "Runs", "Balls faced", "Dismissals", "Strike Rate"]
 
-                        st.subheader(f"Top 10 Batters by Strike Rate vs {filter_label}")
+                        st.subheader(f"{rank_label} Batters by Strike Rate vs {filter_label}")
                         st.markdown(
                             f'<div class="filter-caption">Applied Filters: Phase: <b>{f_overs}</b> | Minimum Requirement: <b>{min_balls} Balls Faced</b></div>',
                             unsafe_allow_html=True,
@@ -317,7 +374,71 @@ else:
             if "BowlerName" in df_raw.columns:
                 df_bowler_totals = df_role_base.groupby("BowlerName").agg(Total_Balls=("Runs", "count")).reset_index()
 
-                if not df_filtered.empty:
+                if f2 in PACERS_METRIC_VIEW_TYPES:
+                    if df_filtered.empty:
+                        st.info("No delivery metrics recorded for the current filter.")
+                    else:
+                        d = df_filtered.copy()
+                        d["_hit"] = hitting_stumps_mask(d).astype(float)
+                        if "ReleaseSpeed" in d.columns:
+                            d["_rs"] = pd.to_numeric(d["ReleaseSpeed"], errors="coerce")
+                        else:
+                            d["_rs"] = np.nan
+                        if "Swing" in d.columns:
+                            d["_sw"] = pd.to_numeric(d["Swing"], errors="coerce")
+                        else:
+                            d["_sw"] = np.nan
+                        if "Deviation" in d.columns:
+                            d["_dev"] = pd.to_numeric(d["Deviation"], errors="coerce")
+                        else:
+                            d["_dev"] = np.nan
+                        if "BounceX" in d.columns:
+                            d["_bx"] = pd.to_numeric(d["BounceX"], errors="coerce")
+                        else:
+                            d["_bx"] = np.nan
+
+                        if f2 == "Avg Speed":
+                            g = d.groupby("BowlerName").agg(Balls=("Runs", "count"), Val=("_rs", "mean"))
+                        elif f2 == "Avg Swing":
+                            g = d.groupby("BowlerName").agg(Balls=("Runs", "count"), Val=("_sw", "mean"))
+                        elif f2 == "Avg Seam":
+                            g = d.groupby("BowlerName").agg(Balls=("Runs", "count"), Val=("_dev", "mean"))
+                        elif f2 == "Avg Length":
+                            g = d.groupby("BowlerName").agg(Balls=("Runs", "count"), Val=("_bx", "mean"))
+                        elif f2 == "Hitting Stumps %":
+                            g = d.groupby("BowlerName").agg(Balls=("Runs", "count"), Val=("_hit", "mean"))
+                            g["Val"] = g["Val"] * 100.0
+                        else:
+                            g = pd.DataFrame(columns=["BowlerName", "Balls", "Val"])
+
+                        g = g.reset_index().rename(columns={"BowlerName": "BOWLER NAME"})
+                        g = g[g["Balls"] >= min_balls]
+                        if f2 in ("Avg Swing", "Avg Seam"):
+                            g["Val"] = g["Val"].abs()
+                        if g.empty:
+                            st.info(
+                                f"No pacers found matching the minimum requirement threshold of {min_balls} balls bowled."
+                            )
+                        else:
+                            g = rank_slice(g, "Val", higher_is_better=True, bottom=want_bottom)
+                            g["Val"] = g["Val"].round(1)
+                            g.columns = ["BOWLER NAME", "BALLS", f2.upper()]
+                            st.subheader(f"{rank_label} Pacers — {f2}")
+                            phase_line = "" if cfg.is_test else f'Phase: <b>{f_overs}</b> | '
+                            st.markdown(
+                                f'<div class="filter-caption">Applied Filters: {phase_line}Minimum Requirement: <b>{min_balls} Balls Bowled</b></div>',
+                                unsafe_allow_html=True,
+                            )
+                            mcol = f2.upper()
+                            st.dataframe(
+                                g.set_index("BOWLER NAME"),
+                                use_container_width=True,
+                                column_config={
+                                    "BALLS": st.column_config.NumberColumn(alignment="center"),
+                                    mcol: st.column_config.NumberColumn(alignment="center"),
+                                },
+                            )
+                elif not df_filtered.empty:
                     leaderboard = df_filtered.groupby("BowlerName").agg(
                         Runs_Conceded=("Runs", "sum"),
                         Balls_Bowled=("Runs", "count"),
@@ -336,7 +457,9 @@ else:
                             leaderboard["Bowling Strike Rate"] = leaderboard["Bowling Strike Rate"].round(2)
 
                             if f2 == "All":
-                                leaderboard = leaderboard.sort_values(by="Wickets", ascending=False).head(10)
+                                leaderboard = rank_slice(
+                                    leaderboard, "Wickets", higher_is_better=True, bottom=want_bottom
+                                )
                                 final_cols = ["BowlerName", "Balls_Bowled", "Wickets", "Bowling Strike Rate"]
                                 col_titles = ["BOWLER NAME", "BALLS", "WICKETS", "BOWLING STRIKE RATE"]
                                 pct_col_name = None
@@ -345,7 +468,9 @@ else:
                                     leaderboard["Balls_Bowled"] / leaderboard["Total_Balls"]
                                 ) * 100
                                 leaderboard["% of Length"] = leaderboard["% of Length"].round(1)
-                                leaderboard = leaderboard.sort_values(by="% of Length", ascending=False).head(10)
+                                leaderboard = rank_slice(
+                                    leaderboard, "% of Length", higher_is_better=True, bottom=want_bottom
+                                )
                                 final_cols = [
                                     "BowlerName",
                                     "Balls_Bowled",
@@ -366,7 +491,12 @@ else:
                                     leaderboard["Balls_Bowled"] / leaderboard["Total_Balls"]
                                 ) * 100
                                 leaderboard["% of Pace Context"] = leaderboard["% of Pace Context"].round(1)
-                                leaderboard = leaderboard.sort_values(by="% of Pace Context", ascending=False).head(10)
+                                leaderboard = rank_slice(
+                                    leaderboard,
+                                    "% of Pace Context",
+                                    higher_is_better=True,
+                                    bottom=want_bottom,
+                                )
                                 final_cols = [
                                     "BowlerName",
                                     "Balls_Bowled",
@@ -383,9 +513,12 @@ else:
                                 ]
                                 pct_col_name = "% OF PACE"
                             else:
-                                leaderboard = leaderboard.sort_values(
-                                    by="Bowling Strike Rate", ascending=True
-                                ).head(10)
+                                leaderboard = rank_slice(
+                                    leaderboard,
+                                    "Bowling Strike Rate",
+                                    higher_is_better=False,
+                                    bottom=want_bottom,
+                                )
                                 final_cols = ["BowlerName", "Balls_Bowled", "Wickets", "Bowling Strike Rate"]
                                 col_titles = ["BOWLER NAME", "BALLS", "WICKETS", "BOWLING STRIKE RATE"]
                                 pct_col_name = None
@@ -396,7 +529,9 @@ else:
                             leaderboard["Economy"] = leaderboard["Economy"].round(2)
 
                             if f2 == "All":
-                                leaderboard = leaderboard.sort_values(by="Wickets", ascending=False).head(10)
+                                leaderboard = rank_slice(
+                                    leaderboard, "Wickets", higher_is_better=True, bottom=want_bottom
+                                )
                                 final_cols = ["BowlerName", "Balls_Bowled", "Wickets", "Economy"]
                                 col_titles = ["Bowler", "Balls", "Wickets", "Economy"]
                                 pct_col_name = None
@@ -405,7 +540,9 @@ else:
                                     leaderboard["Balls_Bowled"] / leaderboard["Total_Balls"]
                                 ) * 100
                                 leaderboard["% of Length"] = leaderboard["% of Length"].round(1)
-                                leaderboard = leaderboard.sort_values(by="% of Length", ascending=False).head(10)
+                                leaderboard = rank_slice(
+                                    leaderboard, "% of Length", higher_is_better=True, bottom=want_bottom
+                                )
                                 final_cols = ["BowlerName", "Balls_Bowled", "Wickets", "Economy", "% of Length"]
                                 col_titles = ["Bowler", "Balls", "Wickets", "Economy", "% of Length"]
                                 pct_col_name = "% of Length"
@@ -414,8 +551,11 @@ else:
                                     leaderboard["Balls_Bowled"] / leaderboard["Total_Balls"]
                                 ) * 100
                                 leaderboard["% of Pace Context"] = leaderboard["% of Pace Context"].round(1)
-                                leaderboard = leaderboard.sort_values(by="% of Pace Context", ascending=False).head(
-                                    10
+                                leaderboard = rank_slice(
+                                    leaderboard,
+                                    "% of Pace Context",
+                                    higher_is_better=True,
+                                    bottom=want_bottom,
                                 )
                                 final_cols = [
                                     "BowlerName",
@@ -427,7 +567,9 @@ else:
                                 col_titles = ["Bowler", "Balls", "Wickets", "Economy", "% of Pace"]
                                 pct_col_name = "% of Pace"
                             else:
-                                leaderboard = leaderboard.sort_values(by="Economy", ascending=True).head(10)
+                                leaderboard = rank_slice(
+                                    leaderboard, "Economy", higher_is_better=False, bottom=want_bottom
+                                )
                                 final_cols = ["BowlerName", "Balls_Bowled", "Wickets", "Economy"]
                                 col_titles = ["Bowler", "Balls", "Wickets", "Economy"]
                                 pct_col_name = None
@@ -436,7 +578,7 @@ else:
                         leaderboard.columns = col_titles
 
                         title_suffix = "by Wickets" if f2 == "All" else f"vs {filter_label} ({f2})"
-                        st.subheader(f"Top 10 Pacers' Performance {title_suffix}")
+                        st.subheader(f"{rank_label} Pacers' Performance {title_suffix}")
                         phase_line = (
                             ""
                             if cfg.is_test
@@ -474,7 +616,71 @@ else:
             if "BowlerName" in df_raw.columns:
                 df_bowler_totals = df_role_base.groupby("BowlerName").agg(Total_Balls=("Runs", "count")).reset_index()
 
-                if not df_filtered.empty:
+                if f2 in SPINNERS_METRIC_VIEW_TYPES:
+                    if df_filtered.empty:
+                        st.info("No delivery metrics recorded for the current filter.")
+                    else:
+                        d = df_filtered.copy()
+                        d["_hit"] = hitting_stumps_mask(d).astype(float)
+                        if "ReleaseSpeed" in d.columns:
+                            d["_rs"] = pd.to_numeric(d["ReleaseSpeed"], errors="coerce")
+                        else:
+                            d["_rs"] = np.nan
+                        if "Swing" in d.columns:
+                            d["_sw"] = pd.to_numeric(d["Swing"], errors="coerce")
+                        else:
+                            d["_sw"] = np.nan
+                        if "Deviation" in d.columns:
+                            d["_dev"] = pd.to_numeric(d["Deviation"], errors="coerce")
+                        else:
+                            d["_dev"] = np.nan
+                        if "BounceX" in d.columns:
+                            d["_bx"] = pd.to_numeric(d["BounceX"], errors="coerce")
+                        else:
+                            d["_bx"] = np.nan
+
+                        if f2 == "Avg Speed":
+                            g = d.groupby("BowlerName").agg(Balls=("Runs", "count"), Val=("_rs", "mean"))
+                        elif f2 == "Avg Drift":
+                            g = d.groupby("BowlerName").agg(Balls=("Runs", "count"), Val=("_sw", "mean"))
+                        elif f2 == "Avg Turn":
+                            g = d.groupby("BowlerName").agg(Balls=("Runs", "count"), Val=("_dev", "mean"))
+                        elif f2 == "Avg Length":
+                            g = d.groupby("BowlerName").agg(Balls=("Runs", "count"), Val=("_bx", "mean"))
+                        elif f2 == "Hitting Stumps %":
+                            g = d.groupby("BowlerName").agg(Balls=("Runs", "count"), Val=("_hit", "mean"))
+                            g["Val"] = g["Val"] * 100.0
+                        else:
+                            g = pd.DataFrame()
+
+                        g = g.reset_index().rename(columns={"BowlerName": "BOWLER NAME"})
+                        g = g[g["Balls"] >= min_balls]
+                        if f2 in ("Avg Drift", "Avg Turn"):
+                            g["Val"] = g["Val"].abs()
+                        if g.empty:
+                            st.info(
+                                f"No spinners found matching the minimum requirement threshold of {min_balls} balls bowled."
+                            )
+                        else:
+                            g = rank_slice(g, "Val", higher_is_better=True, bottom=want_bottom)
+                            g["Val"] = g["Val"].round(1)
+                            g.columns = ["BOWLER NAME", "BALLS", f2.upper()]
+                            st.subheader(f"{rank_label} Spinners — {f2}")
+                            phase_line = "" if cfg.is_test else f'Phase: <b>{f_overs}</b> | '
+                            st.markdown(
+                                f'<div class="filter-caption">Applied Filters: {phase_line}Minimum Requirement: <b>{min_balls} Balls Bowled</b></div>',
+                                unsafe_allow_html=True,
+                            )
+                            mcol = f2.upper()
+                            st.dataframe(
+                                g.set_index("BOWLER NAME"),
+                                use_container_width=True,
+                                column_config={
+                                    "BALLS": st.column_config.NumberColumn(alignment="center"),
+                                    mcol: st.column_config.NumberColumn(alignment="center"),
+                                },
+                            )
+                elif not df_filtered.empty:
                     leaderboard = df_filtered.groupby("BowlerName").agg(
                         Runs_Conceded=("Runs", "sum"),
                         Balls_Bowled=("Runs", "count"),
@@ -494,7 +700,9 @@ else:
                             leaderboard["Bowling Strike Rate"] = leaderboard["Bowling Strike Rate"].round(2)
 
                             if f2 == "All":
-                                leaderboard = leaderboard.sort_values(by="Wickets", ascending=False).head(10)
+                                leaderboard = rank_slice(
+                                    leaderboard, "Wickets", higher_is_better=True, bottom=want_bottom
+                                )
                                 final_cols = ["BowlerName", "Balls_Bowled", "Wickets", "Bowling Strike Rate"]
                                 col_titles = ["BOWLER NAME", "BALLS", "WICKETS", "BOWLING STRIKE RATE"]
                                 pct_col_name = None
@@ -503,7 +711,9 @@ else:
                                     leaderboard["Balls_Bowled"] / leaderboard["Total_Balls"]
                                 ) * 100
                                 leaderboard["% Metric"] = leaderboard["% Metric"].round(1)
-                                leaderboard = leaderboard.sort_values(by="% Metric", ascending=False).head(10)
+                                leaderboard = rank_slice(
+                                    leaderboard, "% Metric", higher_is_better=True, bottom=want_bottom
+                                )
                                 final_cols = [
                                     "BowlerName",
                                     "Balls_Bowled",
@@ -520,9 +730,12 @@ else:
                                 ]
                                 pct_col_name = "% METRIC"
                             else:
-                                leaderboard = leaderboard.sort_values(
-                                    by="Bowling Strike Rate", ascending=True
-                                ).head(10)
+                                leaderboard = rank_slice(
+                                    leaderboard,
+                                    "Bowling Strike Rate",
+                                    higher_is_better=False,
+                                    bottom=want_bottom,
+                                )
                                 final_cols = ["BowlerName", "Balls_Bowled", "Wickets", "Bowling Strike Rate"]
                                 col_titles = ["BOWLER NAME", "BALLS", "WICKETS", "BOWLING STRIKE RATE"]
                                 pct_col_name = None
@@ -533,7 +746,9 @@ else:
                             leaderboard["Economy"] = leaderboard["Economy"].round(2)
 
                             if f2 == "All":
-                                leaderboard = leaderboard.sort_values(by="Wickets", ascending=False).head(10)
+                                leaderboard = rank_slice(
+                                    leaderboard, "Wickets", higher_is_better=True, bottom=want_bottom
+                                )
                                 final_cols = ["BowlerName", "Balls_Bowled", "Wickets", "Economy"]
                                 col_titles = ["Bowler", "Balls", "Wickets", "Economy"]
                                 pct_col_name = None
@@ -542,12 +757,16 @@ else:
                                     leaderboard["Balls_Bowled"] / leaderboard["Total_Balls"]
                                 ) * 100
                                 leaderboard["% Metric"] = leaderboard["% Metric"].round(1)
-                                leaderboard = leaderboard.sort_values(by="% Metric", ascending=False).head(10)
+                                leaderboard = rank_slice(
+                                    leaderboard, "% Metric", higher_is_better=True, bottom=want_bottom
+                                )
                                 final_cols = ["BowlerName", "Balls_Bowled", "Wickets", "Economy", "% Metric"]
                                 col_titles = ["Bowler", "Balls", "Wickets", "Economy", "% Metric"]
                                 pct_col_name = "% Metric"
                             else:
-                                leaderboard = leaderboard.sort_values(by="Economy", ascending=True).head(10)
+                                leaderboard = rank_slice(
+                                    leaderboard, "Economy", higher_is_better=False, bottom=want_bottom
+                                )
                                 final_cols = ["BowlerName", "Balls_Bowled", "Wickets", "Economy"]
                                 col_titles = ["Bowler", "Balls", "Wickets", "Economy"]
                                 pct_col_name = None
@@ -556,7 +775,7 @@ else:
                         leaderboard.columns = col_titles
 
                         title_suffix = "by Wickets" if f2 == "All" else f"vs {filter_label} ({f2})"
-                        st.subheader(f"Top 10 Spinners Performance {title_suffix}")
+                        st.subheader(f"{rank_label} Spinners Performance {title_suffix}")
                         phase_line = "" if cfg.is_test else f'Phase: <b>{f_overs}</b> | '
                         st.markdown(
                             f'<div class="filter-caption">Applied Filters: {phase_line}Minimum Requirement: <b>{min_balls} Balls Bowled</b></div>',

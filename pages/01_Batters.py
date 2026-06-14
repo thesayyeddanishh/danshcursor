@@ -22,7 +22,14 @@ from cricket_config import (
     seam_speed_ordered_groups,
     spin_speed_group,
     spin_speed_ordered_groups,
+    format_banner_caps,
+    FORMAT_BANNER_STYLE,
+    pitch_map_figsize,
+    pitch_bin_percentages,
+    add_crease_lateral_zone_background,
 )
+
+from page_nav import render_page_nav
 
 # --- 1. GLOBAL UTILITY FUNCTIONS ---
 
@@ -93,33 +100,64 @@ def create_crease_beehive(df_in, delivery_type):
     # -----------------------------------------------------------
     # --- 1. SETUP SUBPLOTS (Increased Figure Width) ---
     # Increased width from 7 to 8 for a wider Beehive chart relative to height
-    fig = plt.figure(figsize=(7, 5)) 
-    gs = fig.add_gridspec(2, 1, height_ratios=[4, 1], hspace=0.005) 
+    fig = plt.figure(figsize=(7, 5))
+    gs = fig.add_gridspec(2, 1, height_ratios=[4, 1], hspace=0.005)
     ax_bh = fig.add_subplot(gs[0, 0])      # Top subplot (Beehive)
     ax_boxes = fig.add_subplot(gs[1, 0])   # Bottom subplot (Lateral Boxes)
     fig.patch.set_facecolor('white')
 
     # -----------------------------------------------------------
     ## --- 2. CHART 2a: CREASE BEEHIVE (ax_bh) ---
-    
+    add_crease_lateral_zone_background(ax_bh, zorder=0)
+
     # --- Traces ---
-    ax_bh.scatter(regular_balls["CreaseY"], regular_balls["CreaseZ"], s=40, c='lightgrey', edgecolor='white', linewidths=1.0, alpha=0.95, label="Regular Ball")
-    ax_bh.scatter(boundaries["CreaseY"], boundaries["CreaseZ"], s=80, c='royalblue', edgecolor='white', linewidths=1.0, alpha=0.95, label="Boundary")
-    ax_bh.scatter(wickets["CreaseY"], wickets["CreaseZ"], s=80, c='red', edgecolor='white', linewidths=1.0, alpha=0.95, label="Wicket")
+    ax_bh.scatter(
+        regular_balls["CreaseY"],
+        regular_balls["CreaseZ"],
+        s=40,
+        c="lightgrey",
+        edgecolor="white",
+        linewidths=1.0,
+        alpha=0.95,
+        label="Regular Ball",
+        zorder=3,
+    )
+    ax_bh.scatter(
+        boundaries["CreaseY"],
+        boundaries["CreaseZ"],
+        s=80,
+        c="royalblue",
+        edgecolor="white",
+        linewidths=1.0,
+        alpha=0.95,
+        label="Boundary",
+        zorder=4,
+    )
+    ax_bh.scatter(
+        wickets["CreaseY"],
+        wickets["CreaseZ"],
+        s=80,
+        c="red",
+        edgecolor="white",
+        linewidths=1.0,
+        alpha=0.95,
+        label="Wicket",
+        zorder=5,
+    )
 
     # --- Reference Lines ---
-    ax_bh.axvline(x=-0.18, color="grey", linestyle="--", linewidth=0.5) 
-    ax_bh.axvline(x=0.18, color="grey", linestyle="--", linewidth=0.5)
-    ax_bh.axvline(x=0, color="grey", linestyle="--", linewidth=0.5) 
-    ax_bh.axvline(x=-0.92, color="grey", linestyle="-", linewidth=0.5) 
-    ax_bh.axvline(x=0.92, color="grey", linestyle="-", linewidth=0.5)
-    ax_bh.axhline(y=0.78, color="grey", linestyle="-", linewidth=0.5)
+    ax_bh.axvline(x=-0.18, color="grey", linestyle="--", linewidth=0.5, zorder=2)
+    ax_bh.axvline(x=0.18, color="grey", linestyle="--", linewidth=0.5, zorder=2)
+    ax_bh.axvline(x=0, color="grey", linestyle="--", linewidth=0.5, zorder=2)
+    ax_bh.axvline(x=-0.92, color="green", linestyle="--", linewidth=2.2, zorder=2)
+    ax_bh.axvline(x=0.92, color="green", linestyle="--", linewidth=2.2, zorder=2)
+    ax_bh.axhline(y=0.78, color="grey", linestyle="-", linewidth=0.5, zorder=2)
 
     # --- Annotation ---
-    ax_bh.text(-1.5, 0.78, "Stump line", ha='left', va='bottom', fontsize=8, color="grey", transform=ax_bh.transData)
-    
+    ax_bh.text(-0.98, 0.78, "Stump line", ha="left", va="bottom", fontsize=8, color="grey", transform=ax_bh.transData)
+
     # --- Formatting ---
-    ax_bh.set_xlim([-2, 2])
+    ax_bh.set_xlim([-1, 1])
     ax_bh.set_ylim([0, 2])
     ax_bh.set_aspect('equal', adjustable='box')
     ax_bh.set_xticks([]); ax_bh.set_yticks([]); ax_bh.grid(False)
@@ -270,113 +308,121 @@ def get_pitch_bins(delivery_type):
 
 # --- CHART 3: PITCH MAP (BOUNCE LOCATION) ---
 def create_pitch_map(df_in, delivery_type):
+    _cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
+    pw = 3.0 if delivery_type == "Seam" else 4.0
+    fig_w, fig_h = pitch_map_figsize(_cfg, width=pw)
+
     if df_in.empty:
-        # Create an empty figure with a text note if data is missing
-        fig, ax = plt.subplots(figsize=(3,4.7))
-        ax.text(0.5, 0.5, f"No data for Pitch Map ({delivery_type})", ha='center', va='center', fontsize=12)
-        ax.axis('off')
+        fig, ax = plt.subplots(figsize=(fig_w, fig_h))
+        ax.text(0.5, 0.5, f"No data for Pitch Map ({delivery_type})", ha="center", va="center", fontsize=12)
+        ax.axis("off")
         return fig
 
-    # --- Data Filtering ---
+    nw = df_in[df_in["Wicket"] == False].copy()
+    runs = pd.to_numeric(nw.get("Runs", pd.Series(0, index=nw.index)), errors="coerce").fillna(0)
+    is_boundary = runs.isin([4, 6])
+    pitch_boundaries = nw[is_boundary]
+    pitch_others = nw[~is_boundary]
     pitch_wickets = df_in[df_in["Wicket"] == True]
-    pitch_non_wickets = df_in[df_in["Wicket"] == False]
-    
-    # --- Chart Setup ---
-    fig, ax = plt.subplots(figsize=(3,4.7))
-    ax.set_facecolor('white')
-    fig.patch.set_facecolor('white')
 
-    # --- Pitch Bins & Full Toss Adjustment ---
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h))
+    ax.set_facecolor("white")
+    fig.patch.set_facecolor("white")
+
     PITCH_BINS = get_pitch_bins(delivery_type)
-    
-    # --- 1. Add Zone Lines & Labels (Horizontal Lines) ---
-    
-    # Determine boundary Y values to draw lines (excluding the start of the lowest bin)
-    # The 'Full Toss' bin is assumed to start at -4.0, which is the bottom plot limit.
-    boundary_y_values = sorted([v[0] for v in PITCH_BINS.values() if v[0] > -4.0], reverse=True)
 
+    boundary_y_values = sorted([v[0] for v in PITCH_BINS.values() if v[0] > -4.0], reverse=True)
     for y_val in boundary_y_values:
-        # ax.axhline is the Matplotlib equivalent of fig_pitch.add_hline
         ax.axhline(y=y_val, color="lightgrey", linewidth=1.0, linestyle="--")
 
-    # Add zone labels (equivalent to fig_pitch.add_annotation)
+    pct_by_bin = pitch_bin_percentages(df_in, PITCH_BINS, bounce_col="BounceX")
+    y_off = 0.42 if _cfg.is_test or delivery_type == "Seam" else 0.22
     for Length, bounds in PITCH_BINS.items():
         mid_y = (bounds[0] + bounds[1]) / 2
-        # Use ax.text for annotation, positioned on the far left (x=-1.45)
         ax.text(
-            x=-1.45, 
-            y=mid_y, 
-            s=Length.upper(), 
-            ha='left', 
-            va='center', 
-            fontsize=8, 
-            color="grey", 
-            fontweight='bold'
-            )
-    
+            x=-1.45,
+            y=mid_y,
+            s=str(Length).upper(),
+            ha="left",
+            va="center",
+            fontsize=8,
+            color="grey",
+            fontweight="bold",
+        )
+        p = int(pct_by_bin.get(Length, 0))
+        ax.text(
+            x=-1.45,
+            y=mid_y - y_off,
+            s=f"{p}%",
+            ha="left",
+            va="center",
+            fontsize=16,
+            color="grey",
+            fontweight="bold",
+        )
 
-    # --- 3. Plot Data (Scatter Traces) ---
-    
-    # Non-Wickets (light grey)
-    ax.scatter(
-        pitch_non_wickets["BounceY"], pitch_non_wickets["BounceX"], 
-        s=60, # Matplotlib size equivalent to Plotly size=10
-        c='#D3D3D3', 
-        edgecolor='white', 
-        linewidths=1.0, 
-        alpha=0.9,
-        label="No Wicket"
-    )
+    # Draw order: Others (bottom) → Boundaries → Wickets (top)
+    if not pitch_others.empty:
+        ax.scatter(
+            pitch_others["BounceY"],
+            pitch_others["BounceX"],
+            s=60,
+            c="#D3D3D3",
+            edgecolor="white",
+            linewidths=1.0,
+            alpha=0.9,
+            label="Others",
+        )
+    if not pitch_boundaries.empty:
+        ax.scatter(
+            pitch_boundaries["BounceY"],
+            pitch_boundaries["BounceX"],
+            s=60,
+            c="royalblue",
+            edgecolor="white",
+            linewidths=1.0,
+            alpha=0.9,
+            label="Boundaries",
+        )
+    if not pitch_wickets.empty:
+        ax.scatter(
+            pitch_wickets["BounceY"],
+            pitch_wickets["BounceX"],
+            s=90,
+            c="red",
+            edgecolor="white",
+            linewidths=1.0,
+            alpha=0.95,
+            label="Wicket",
+        )
 
-    # Wickets (red)
-    ax.scatter(
-        pitch_wickets["BounceY"], pitch_wickets["BounceX"], 
-        s=90, # Matplotlib size equivalent to Plotly size=12
-        c='red', 
-        edgecolor='white', 
-        linewidths=1.0, 
-        alpha=0.95,
-        label="Wicket"
-    )
-    # --- 2. Add Stump lines (Vertical Lines) ---
-    # ax.axvline is the Matplotlib equivalent of fig_pitch.add_vline
     ax.axvline(x=-0.18, color="#777777", linestyle="--", linewidth=1)
     ax.axvline(x=0.18, color="#777777", linestyle="--", linewidth=1)
     ax.axvline(x=0, color="#777777", linestyle="--", linewidth=0.8)
-    # --- 4. Layout (Axis and Spines) ---
-    
-    # Set axis limits
-    ax.set_xlim([-1.5, 1.5])
-    # Note: Matplotlib typically plots y-axis increasing upwards, but here we set 
-    # the range from [16.0, -4.0] to reverse the axis and match the Plotly visual 
-    # where lower values (closer to batter) are at the bottom.
-    ax.set_ylim([16.0, -4.0])
 
-    # Hide all axis elements (equivalent to visible=False)
+    ax.set_xlim([-1.5, 1.5])
+    ax.set_ylim([16.0, -4.0])
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_xlabel("")
     ax.set_ylabel("")
     ax.grid(False)
-    
-    # Hide axis spines (plot border)
-    # 1. Set line style for all spines you want visible
-    spine_color = 'black'
+
+    spine_color = "black"
     spine_width = 0.5
-    for spine_name in ['left', 'top', 'bottom','right']:
+    for spine_name in ["left", "top", "bottom", "right"]:
         ax.spines[spine_name].set_visible(True)
         ax.spines[spine_name].set_color(spine_color)
         ax.spines[spine_name].set_linewidth(spine_width)
-        
+
     plt.tight_layout()
-    
     return fig
 
 
 def _create_pitch_Length_bars_test(df_in, delivery_type):
-    """Red-ball layout: Average / Runs / Dismissals by length."""
+    """Red-ball layout: Runs / Dismissals / Batting average by length."""
     _cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
-    FIG_SIZE = (3, 6)
+    FIG_SIZE = pitch_map_figsize(_cfg, width=3.0)
 
     if df_in.empty:
         fig, ax = plt.subplots(figsize=FIG_SIZE)
@@ -427,20 +473,20 @@ def _create_pitch_Length_bars_test(df_in, delivery_type):
     categories = df_summary.index.tolist()[::-1]
     fig, axes = plt.subplots(3, 1, figsize=FIG_SIZE, sharey=True)
 
-    metrics = ["Average", "Runs", "Dismissals"]
-    titles = ["Batting Average", "Runs", "Dismissals"]
+    metrics = ["Runs", "Dismissals", "Average"]
+    titles = ["Runs", "Dismissals", "Batting Average"]
 
     def get_limit(val):
         return val * 1.2 if val > 0 else 10
 
-    max_avg = get_limit(df_summary["Average"].max())
     max_runs = get_limit(df_summary["Runs"].max())
     max_dismissals = get_limit(df_summary["Dismissals"].max())
+    max_avg = get_limit(df_summary["Average"].max())
 
     xlim_limits = {
-        "Average": (0, max_avg),
         "Runs": (0, max_runs),
         "Dismissals": (0, max_dismissals),
+        "Average": (0, max_avg),
     }
 
     for i, ax in enumerate(axes):
@@ -519,7 +565,7 @@ def create_pitch_Length_bars(df_in, delivery_type):
     if _cfg.is_test:
         return _create_pitch_Length_bars_test(df_in, delivery_type)
 
-    FIG_SIZE = (3, 4.7)
+    FIG_SIZE = pitch_map_figsize(_cfg, width=3.0)
 
     if df_in.empty:
         fig, ax = plt.subplots(figsize=FIG_SIZE)
@@ -570,24 +616,24 @@ def create_pitch_Length_bars(df_in, delivery_type):
         lambda row: row["Runs"] / row["Wickets"] if row["Wickets"] > 0 else 0, axis=1
     )
 
-    df_summary["TotalRuns"] = df_summary["Runs"]
+    df_summary["Dismissals"] = df_summary["Wickets"]
 
     categories = df_summary.index.tolist()[::-1]
 
     fig, axes = plt.subplots(3, 1, figsize=FIG_SIZE, sharey=True)
     plt.subplots_adjust(hspace=10)
 
-    metrics = ["StrikeRate", "Average", "Runs"]
-    titles = ["Batting Strike Rate", "Batting Average", "Runs"]
+    metrics = ["Dismissals", "Average", "StrikeRate"]
+    titles = ["Dismissals", "Batting Average", "Batting Strike Rate"]
 
-    max_sr = df_summary["StrikeRate"].max() * 1.2 if df_summary["StrikeRate"].max() > 0 else 300
+    max_dismissals = df_summary["Dismissals"].max() * 1.2 if df_summary["Dismissals"].max() > 0 else 100
     max_avg = df_summary["Average"].max() * 1.2 if df_summary["Average"].max() > 0 else 100
-    max_runs = df_summary["Runs"].max() * 1.2 if df_summary["Runs"].max() > 0 else 100
+    max_sr = df_summary["StrikeRate"].max() * 1.2 if df_summary["StrikeRate"].max() > 0 else 300
 
     xlim_limits = {
+        "Dismissals": (0, max_dismissals),
         "Average": (0, max_avg),
         "StrikeRate": (0, max_sr),
-        "Runs": (0, max_runs),
     }
 
     for i, ax in enumerate(axes):
@@ -600,10 +646,12 @@ def create_pitch_Length_bars(df_in, delivery_type):
         ax.barh(categories, values, height=0.49, color="#ff5000", zorder=3, alpha=0.9)
 
         for j, (cat, val) in enumerate(zip(categories, values)):
-            if metric == "Wickets":
+            if metric == "Dismissals":
                 label = f"{int(val)}"
-            else:
+            elif metric == "StrikeRate":
                 label = f"{val:.0f}"
+            else:
+                label = f"{val:.1f}"
 
             ax.text(
                 val,
@@ -1107,7 +1155,7 @@ def create_speed_metrics_bar(df_in, delivery_type):
     for ax, metric, title in zip(axes, metrics, titles):
         vals = summary[metric]
         ax.barh(y, vals, color='#ff5000', edgecolor='black', height=height)
-        ax.set_title(title, fontsize=14, fontweight='bold')
+        ax.set_title(title, fontsize=16, fontweight='bold')
         
         # FIX: Place text at a fixed X-position (5% of the max value) 
         # to ensure it's always readable and aligned
@@ -1123,18 +1171,36 @@ def create_speed_metrics_bar(df_in, delivery_type):
                 va='center', 
                 ha='left',
                 fontweight='bold', 
-                fontsize=13,
+                fontsize=15,
                 color='white' if v > (max_val * 0.2) else 'black'
             )
 
     # Formatting
     ax1.set_yticks(y)
-    ax1.set_yticklabels(ordered_groups, fontsize=12, fontweight='bold')
+    ax1.set_yticklabels(ordered_groups, fontsize=14, fontweight='bold')
     
     for ax in axes:
         ax.spines[['top', 'right', 'bottom']].set_visible(False)
         ax.xaxis.set_visible(False)
         ax.invert_yaxis() 
+
+    plt.tight_layout(pad=0.35)
+    fig.canvas.draw()
+    p0 = ax1.get_position()
+    p3 = ax4.get_position()
+    pad_x = 0.012
+    pad_y = 0.018
+    border_rect = patches.Rectangle(
+        (p0.x0 - pad_x, p0.y0 - pad_y),
+        (p3.x1 - p0.x0) + 2 * pad_x,
+        (p0.y1 - p0.y0) + 2 * pad_y,
+        facecolor="none",
+        edgecolor="black",
+        linewidth=0.6,
+        transform=fig.transFigure,
+        clip_on=False,
+    )
+    fig.patches.append(border_rect)
 
     return fig
     
@@ -1147,13 +1213,13 @@ st.markdown(
     """
     <style>
     section[data-testid="stSidebar"] {
-        width: 200px !important; 
+        width: 200px !important;
     }
-    <style>
+    </style>
     """,
     unsafe_allow_html=True,
 )
-# --- Sidebar Content ---
+render_page_nav("batters")
 
 
 
@@ -1170,36 +1236,39 @@ if 'data_df' not in st.session_state:
 # Retrieve the full raw DataFrame
 df_raw = st.session_state['data_df']
 _cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
-with st.sidebar:
-    st.markdown(f"**{_cfg.sidebar_title}**")
-    st.caption(_cfg.sidebar_sub)
-    st.caption(_cfg.label)
-# 1. Define columns with appropriate widths
-col_title_space, col_legend, col_dataname = st.columns([1, 2.5, 1.5]) 
+# Header: wide title | file | format (right) | legend
+col_title_space, col_file, col_format_banner, col_legend = st.columns([2.6, 1.5, 2.8, 2.1])
 
 with col_title_space:
     st.title("BATTERS")
 
-with col_legend:
-    legend_markdown = """
-    <p style='font-size: 16px; margin-top: 30px;'>
-        <span style='color: red; font-size: 20px;'>&#9679;</span> Wickets &nbsp;&nbsp;&nbsp; 
-        <span style='color: royalblue; font-size: 20px;'>&#9679;</span> Boundaries &nbsp;&nbsp;&nbsp; 
-        <span style='color: lightgrey; font-size: 20px;'>&#9679;</span> Others
-    </p>
-    """
-    st.markdown(legend_markdown, unsafe_allow_html=True)
-
-with col_dataname:
-    # Use the variable defined in columns: col_dataname
-    file_name = st.session_state.get('file_name', 'N/A')
-    # Added a div with margin-top to align vertically with the legend
-    st.markdown(f"""
+with col_file:
+    file_name = st.session_state.get("file_name", "N/A")
+    st.markdown(
+        f"""
         <div style='margin-top: 35px; text-align: right;'>
             <span style='color: grey; font-size: 14px;'>File: </span>
             <code style='font-size: 14px;'>{file_name}</code>
         </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
+
+with col_format_banner:
+    st.markdown(
+        f'<div style="margin-top: 28px; text-align: right; width: 100%;"><span style="{FORMAT_BANNER_STYLE}">{format_banner_caps(_cfg)}</span></div>',
+        unsafe_allow_html=True,
+    )
+
+with col_legend:
+    legend_markdown = """
+    <p style='font-size: 16px; margin-top: 30px; text-align: right;'>
+        <span style='color: red; font-size: 20px;'>&#9679;</span> Wickets &nbsp;&nbsp;&nbsp;
+        <span style='color: royalblue; font-size: 20px;'>&#9679;</span> Boundaries &nbsp;&nbsp;&nbsp;
+        <span style='color: lightgrey; font-size: 20px;'>&#9679;</span> Others
+    </p>
+    """
+    st.markdown(legend_markdown, unsafe_allow_html=True)
 
 # Ensure columns exist before attempting to convert them
 if "BatsmanName" in df_raw.columns:
@@ -1209,77 +1278,103 @@ if "BowlerName" in df_raw.columns:
     df_raw["BowlerName"] = df_raw["BowlerName"].astype(str).str.upper()
 # NOTE: BattingTeam is often case-sensitive, but converting Batsman/Bowler is key here.
 # =========================================================
-# 🌟 FILTERS 🌟
+# 🌟 FILTERS 🌟 (multiselect; "All" = no filter)
 # =========================================================
-# Use columns to align the four filters horizontally
-filter_col1, filter_col2, filter_col3, filter_col4 = st.columns(4) 
 
-# --- Filter Logic ---
+
+def _multiselect_is_all(sel):
+    return sel is None or len(sel) == 0 or "All" in sel
+
+
 all_teams = ["All"] + sorted(df_raw["BattingTeam"].dropna().unique().tolist())
 
-# 1. Batting Team Filter (in column 1)
-with filter_col1:
-    bat_team = st.selectbox("Batting Team", all_teams, index=0)
+row1 = st.columns(4)
+with row1[0]:
+    bat_team_sel = st.multiselect("Batting Team", all_teams, default=["All"])
 
-# 2. Batsman Name Filter (Logic depends on Batting Team - in column 2)
-if bat_team != "All":
-    # Filter batsmen based on selected team
-    batsmen_options = ["All"] + sorted(df_raw[df_raw["BattingTeam"] == bat_team]["BatsmanName"].dropna().unique().tolist())
+if _multiselect_is_all(bat_team_sel):
+    df_bat_opts = df_raw
 else:
-    # Show all batsmen if 'All' teams is selected
-    batsmen_options = ["All"] + sorted(df_raw["BatsmanName"].dropna().unique().tolist())
-    
-with filter_col2:
-    batsman = st.selectbox("Batsman Name", batsmen_options, index=0)
+    teams_only = [t for t in bat_team_sel if t != "All"]
+    df_bat_opts = df_raw[df_raw["BattingTeam"].isin(teams_only)]
 
-# Find the actual year column case-insensitively
-year_col = next((c for c in df_raw.columns if c.strip().lower() == 'year'), None)
-# Find the actual ground column case-insensitively
-ground_col = next((c for c in df_raw.columns if c.strip().lower() == 'ground'), None)
+batsmen_options = ["All"] + sorted(df_bat_opts["BatsmanName"].dropna().unique().tolist())
 
-# 3. Year Filter (in column 3)
-if year_col:
-    year_options = ["All"] + sorted(df_raw[year_col].dropna().unique().astype(int).astype(str).tolist())
-    with filter_col3:
-        selected_year = st.selectbox("Year", year_options, index=0)
-else:
-    selected_year = "All"
-    with filter_col3:
-        st.info("Year filter unavailable.")
+with row1[1]:
+    batsman_sel = st.multiselect("Batsman Name", batsmen_options, default=["All"])
 
-# 4. Venue Filter (in column 4)
-if ground_col:
-    venue_options = ["All"] + sorted(df_raw[ground_col].dropna().unique().tolist())
-    with filter_col4:
-        selected_venue = st.selectbox("Venue", venue_options, index=0)
-else:
-    selected_venue = "All"
-    with filter_col4:
-        st.info("Venue filter unavailable.")
-        
+year_col = next((c for c in df_raw.columns if c.strip().lower() == "year"), None)
+ground_col = next((c for c in df_raw.columns if c.strip().lower() == "ground"), None)
+tour_col = next((c for c in df_raw.columns if c.strip().lower() == "tour"), None)
+match_col = next((c for c in df_raw.columns if c.strip().lower() == "match"), None)
+
+with row1[2]:
+    if year_col:
+        year_vals = sorted(df_raw[year_col].dropna().unique().astype(int).astype(str).tolist())
+        selected_years = st.multiselect("Year", ["All"] + year_vals, default=["All"])
+    else:
+        selected_years = ["All"]
+        st.info("Year N/A")
+
+with row1[3]:
+    if ground_col:
+        venue_vals = sorted(df_raw[ground_col].dropna().unique().tolist())
+        selected_venues = st.multiselect("Venue", ["All"] + venue_vals, default=["All"])
+    else:
+        selected_venues = ["All"]
+        st.info("Venue N/A")
+
+row2 = st.columns(2)
+with row2[0]:
+    if tour_col:
+        tour_vals = sorted(df_raw[tour_col].dropna().astype(str).unique().tolist())
+        selected_tours = st.multiselect("Tour", ["All"] + tour_vals, default=["All"])
+    else:
+        selected_tours = ["All"]
+        st.caption("Tour N/A")
+
+with row2[1]:
+    if match_col:
+        match_vals = sorted(df_raw[match_col].dropna().astype(str).unique().tolist())
+        selected_matches = st.multiselect("Match", ["All"] + match_vals, default=["All"])
+    else:
+        selected_matches = ["All"]
+        st.caption("Match N/A")
+
 # =========================================================
 
-# --- Apply Filters to the Raw dataframes ---
 
 def apply_filters(df):
-    df_filtered = df.copy() # Work on a copy of the sub-dataframes
+    df_filtered = df.copy()
 
-    if bat_team != "All":
-        df_filtered = df_filtered[df_filtered["BattingTeam"] == bat_team]
-        
-    if batsman != "All":
-        df_filtered = df_filtered[df_filtered["BatsmanName"] == batsman]
-        
-    # Apply Year Filter cleanly matching the found column name
-    actual_year_col = next((c for c in df_filtered.columns if c.strip().lower() == 'year'), None)
-    if selected_year != "All" and actual_year_col:
-        df_filtered = df_filtered[df_filtered[actual_year_col].astype(int) == int(selected_year)]
-        
-    # Apply Venue Filter cleanly matching the found column name
-    actual_ground_col = next((c for c in df_filtered.columns if c.strip().lower() == 'ground'), None)
-    if selected_venue != "All" and actual_ground_col:
-        df_filtered = df_filtered[df_filtered[actual_ground_col] == selected_venue]
-        
+    if not _multiselect_is_all(bat_team_sel):
+        teams_only = [t for t in bat_team_sel if t != "All"]
+        df_filtered = df_filtered[df_filtered["BattingTeam"].isin(teams_only)]
+
+    if not _multiselect_is_all(batsman_sel):
+        bats = [b for b in batsman_sel if b != "All"]
+        df_filtered = df_filtered[df_filtered["BatsmanName"].isin(bats)]
+
+    yc = next((c for c in df_filtered.columns if c.strip().lower() == "year"), None)
+    if yc and not _multiselect_is_all(selected_years):
+        years = [int(y) for y in selected_years if y != "All"]
+        df_filtered = df_filtered[df_filtered[yc].astype(int).isin(years)]
+
+    gc = next((c for c in df_filtered.columns if c.strip().lower() == "ground"), None)
+    if gc and not _multiselect_is_all(selected_venues):
+        venues = [v for v in selected_venues if v != "All"]
+        df_filtered = df_filtered[df_filtered[gc].isin(venues)]
+
+    tc = next((c for c in df_filtered.columns if c.strip().lower() == "tour"), None)
+    if tc and not _multiselect_is_all(selected_tours):
+        tours = [t for t in selected_tours if t != "All"]
+        df_filtered = df_filtered[df_filtered[tc].astype(str).isin(tours)]
+
+    mc = next((c for c in df_filtered.columns if c.strip().lower() == "match"), None)
+    if mc and not _multiselect_is_all(selected_matches):
+        matches = [m for m in selected_matches if m != "All"]
+        df_filtered = df_filtered[df_filtered[mc].astype(str).isin(matches)]
+
     return df_filtered
 
 # Separate by delivery type BEFORE filtering to save a little processing, then apply filters
@@ -1290,7 +1385,11 @@ df_spin_base = df_raw[df_raw["DeliveryType"] == "Spin"]
 df_seam = apply_filters(df_seam_base)
 df_spin = apply_filters(df_spin_base)
     
-heading_text = batsman.upper() if batsman != "All" else "ALL"
+if _multiselect_is_all(batsman_sel):
+    heading_text = "ALL"
+else:
+    names = [b for b in batsman_sel if b != "All"]
+    heading_text = " + ".join(names) if names else "ALL"
 # Use st.markdown to inject HTML, setting the text color directly
 st.markdown(
     f"<h3 style='color: #ff5000;'><b>{heading_text}</b></h3>",
