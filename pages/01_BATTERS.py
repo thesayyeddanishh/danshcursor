@@ -982,8 +982,8 @@ def calculate_scoring_angle(area):
 
 # --- Main Combined Function (Chart 6) ---
 def create_wagon_wheel(df_in, delivery_type):
-    FIG_WIDTH = 7
-    FIG_HEIGHT = 5
+    FIG_WIDTH = 6
+    FIG_HEIGHT = 4
     FIG_SIZE = (FIG_WIDTH, FIG_HEIGHT)
 
     if df_in.empty:
@@ -1048,7 +1048,6 @@ def create_wagon_wheel(df_in, delivery_type):
             else:
                 autotext.set_text('')
 
-        ax_wagon.set_title("RUNS DISTRIBUTION (%)", fontsize=20, fontweight='bold', pad=20)
         ax_wagon.axis('equal')
 
     except Exception as e:
