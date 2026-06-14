@@ -1108,37 +1108,49 @@ with row2[1]:
 
 
 # 4. Apply Filters to the Base spin Data
-df_filtered = df_spin_base.copy()
+def apply_filters(df):
+    df_filtered = df.copy()
 
-if not _multiselect_is_all(bowl_team_sel):
-    df_filtered = df_filtered[df_filtered[bowl_team_sel].isin([t for t in bowl_team_sel if t != "All"])]
+    if not _multiselect_is_all(bowl_team_sel):
+        teams_only = [t for t in bowl_team_sel if t != "All"]
+        df_filtered = df_filtered[df_filtered["BowlingTeam"].isin(teams_only)]
 
-if not _multiselect_is_all(bowler_sel):
-    if "BowlerName" in df_filtered.columns:
-        df_filtered = df_filtered[df_filtered["BowlerName"].isin([b for b in bowler_sel if b != "All"])]
-    else:
-        st.warning("BowlerName column not found for filtering.")
+    if not _multiselect_is_all(batsman_sel):
+        bowls = [b for b in bowler_sel if b != "All"]
+        df_filtered = df_filtered[df_filtered["BowlerName"].isin(bowls)]
 
-yc = next((c for c in df_filtered.columns if c.strip().lower() == "year"), None)
-if yc and not _multiselect_is_all(selected_years):
-    years = [int(y) for y in selected_years if y != "All"]
-    df_filtered = df_filtered[df_filtered[yc].astype(int).isin(years)]
+    yc = next((c for c in df_filtered.columns if c.strip().lower() == "year"), None)
+    if yc and not _multiselect_is_all(selected_years):
+        years = [int(y) for y in selected_years if y != "All"]
+        df_filtered = df_filtered[df_filtered[yc].astype(int).isin(years)]
 
-gc = next((c for c in df_filtered.columns if c.strip().lower() == "ground"), None)
-if gc and not _multiselect_is_all(selected_venues):
-    venues = [v for v in selected_venues if v != "All"]
-    df_filtered = df_filtered[df_filtered[gc].isin(venues)]
+    gc = next((c for c in df_filtered.columns if c.strip().lower() == "ground"), None)
+    if gc and not _multiselect_is_all(selected_venues):
+        venues = [v for v in selected_venues if v != "All"]
+        df_filtered = df_filtered[df_filtered[gc].isin(venues)]
 
-tc = next((c for c in df_filtered.columns if c.strip().lower() == "tour"), None)
-if tc and not _multiselect_is_all(selected_tours):
-    tours = [t for t in selected_tours if t != "All"]
-    df_filtered = df_filtered[df_filtered[tc].astype(str).isin(tours)]
+    tc = next((c for c in df_filtered.columns if c.strip().lower() == "tour"), None)
+    if tc and not _multiselect_is_all(selected_tours):
+        tours = [t for t in selected_tours if t != "All"]
+        df_filtered = df_filtered[df_filtered[tc].astype(str).isin(tours)]
 
-mc = next((c for c in df_filtered.columns if c.strip().lower() == "match"), None)
-if mc and not _multiselect_is_all(selected_matches):
-    matches = [m for m in selected_matches if m != "All"]
-    df_filtered = df_filtered[df_filtered[mc].astype(str).isin(matches)]
+    mc = next((c for c in df_filtered.columns if c.strip().lower() == "match"), None)
+    if mc and not _multiselect_is_all(selected_matches):
+        matches = [m for m in selected_matches if m != "All"]
+        df_filtered = df_filtered[df_filtered[mc].astype(str).isin(matches)]
 
+    return df_filtered
+
+if _multiselect_is_all(bowler_sel):
+    heading_text = "ALL"
+else:
+    names = [b for b in bowler_sel if b != "All"]
+    heading_text = " + ".join(names) if names else "ALL"
+# Use st.markdown to inject HTML, setting the text color directly
+st.markdown(
+    f"<h3 style='color: #ff5000;'><b>{heading_text}</b></h3>",
+    unsafe_allow_html=True
+)
 
 # =========================================================
 # 5. SPLIT AND DISPLAY CHARTS (RHB vs LHB) 🏏
