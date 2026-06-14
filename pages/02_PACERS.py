@@ -55,6 +55,7 @@ def create_pacer_pitch_map(df_in):
         ax.axhline(y=y_val, color="lightgrey", linewidth=1.0, linestyle="--")
 
     pct_by_bin = pitch_bin_percentages(df_in, PITCH_BINS, bounce_col="BounceX")
+    y_off = 0.2
     for length, bounds in PITCH_BINS.items():
         mid_y = (bounds[0] + bounds[1]) / 2
         ax.text(
