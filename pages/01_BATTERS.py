@@ -49,8 +49,6 @@ def create_crease_beehive(df_in, delivery_type):
         ax.text(0.5, 0.5, "No data for Analysis", ha='center', va='center', fontsize=12); 
         ax.axis('off'); 
         return fig
-
-    add_crease_lateral_zone_background(ax_bh, is_rhb=is_rhb, zorder=0)
     
     _cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
 
