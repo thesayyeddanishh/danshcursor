@@ -1424,7 +1424,7 @@ with col1:
     
     # --- Row 9 & 10 RELEASE SPEED ANALYSIS---
     st.markdown("###### METRICS BY RELEASE SPEED v SEAM")
-    st.pyplot(create_speed_metric(df_seam, "Seam"), use_container_width=True)
+    st.pyplot(create_speed_metrics_bar(df_seam, "Seam"), use_container_width=True)
         
 # --- RIGHT COLUMN: SPIN ANALYSIS ---
 with col2:
@@ -1453,5 +1453,5 @@ with col2:
     
     # --- Row 9 & 10 RELEASE SPEED ANALYSIS---
     st.markdown("###### METRICS BY RELEASE SPEED v SPIN")
-    st.pyplot(create_speed_metric(df_spin, "Spin"), use_container_width=True)
+    st.pyplot(create_speed_metrics_bar(df_spin, "Spin"), use_container_width=True)
     
