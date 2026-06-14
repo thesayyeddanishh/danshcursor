@@ -1245,7 +1245,7 @@ with col_format_banner:
 
 with col_legend:
     legend_markdown = """
-    <p style='font-size: 30px; margin-top: 30px; text-align: right;'>
+    <p style='font-size: 20px; margin-top: 30px; text-align: right;'>
         <span style='color: red; font-size: 30px;'>&#9679;</span> Wickets &nbsp;&nbsp;&nbsp;
         <span style='color: royalblue; font-size: 30px;'>&#9679;</span> Boundaries &nbsp;&nbsp;&nbsp;
         <span style='color: lightgrey; font-size: 30px;'>&#9679;</span> Others
