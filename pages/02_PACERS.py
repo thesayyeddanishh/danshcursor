@@ -323,17 +323,15 @@ def create_pacer_crease_beehive(df_in, handedness_label): # Renamed function and
     
     # 1. Define standard zone order (WOO to LEG)
     ordered_zones_base = ["WAY OUTSIDE OFF", "OUTSIDE OFF", "STUMPS", "LEG"]
-    
-    # 2. HANDEDNESS AWARE REVERSAL: Reverse order for LHB for visual consistency
     ordered_zones = ordered_zones_base if is_rhb else ordered_zones_base[::-1]
-    
-    summary = summary.reindex(ordered_zones).fillna(0)
-    
-    # BOWLING AVERAGE CALCULATION (Same formula as before, just interpreted differently)
-    # summary["Avg Runs/Wicket"] = summary.apply(lambda row: row["Runs"] / row["Wickets"] if row["Wickets"] > 0 else np.nan, axis=1)
-    # Economy Calculation
+    summary = summary.reindex(ordered_zones).fillna(0
     summary["Economy"] = summary.apply(lambda row: (row["Runs"] / row["Balls"]) * 6 if row["Balls"] > 0 else np.nan, axis=1)
 
+    # 3. HANDEDNESS AWARE REVERSAL: Reverse order for LHB
+    if not is_rhb:
+        # Reverses the DataFrame for LHB (LEG, STUMPS, OUTSIDE OFF, WAY OUTSIDE OFF)
+        summary = summary.iloc[::-1]
+    
     # -----------------------------------------------------------
     # --- 1. SETUP SUBPLOTS ---
     fig = plt.figure(figsize=(7, 6)) 
