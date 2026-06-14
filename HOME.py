@@ -10,7 +10,6 @@ import pandas as pd
 from io import StringIO
 
 from cricket_config import FORMAT_KEYS, FORMAT_LABELS, resolve_format
-from page_nav import render_page_nav
 
 REQUIRED_COLS = [
     "BatsmanName",
