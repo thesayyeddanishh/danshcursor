@@ -692,7 +692,7 @@ def create_spinner_hitting_missing(df_in, handedness_label):
     ax_map.axvline(x=-0.18, color='grey', linestyle='--', linewidth=1)
     ax_map.axvline(x=0, color='grey', linestyle=':', linewidth=1)
     ax_map.axvline(x=0.18, color='grey', linestyle='--', linewidth=1)
-    ax_map.axhline(y=0.78, color='grey', linestyle='--', linewidth=1)
+    ax_map.axhline(y=0.72, color='grey', linestyle='--', linewidth=1)
     ax_map.axhline(y=0, color='grey', linestyle='-', linewidth=1)
 
     # Points
