@@ -750,7 +750,7 @@ def create_interception_side_on(df_in, delivery_type):
         # === USING PROVIDED LOGIC: PLOT (InterceptionX + 10) on X-axis ===
         ax_scatter.scatter(
             df_slice["InterceptionX"] + 10, df_slice["InterceptionZ"], 
-            color=color_map[ctype],edgecolors='white', linewidths=0.3, s=, label=ctype
+            color=color_map[ctype],edgecolors='white', linewidths=0.3, s=65, label=ctype
         )
 
     # 2. Draw Vertical Dashed Lines with Labels (FIXED LINES: 0.0, 1.25, 2.0, 3.0)
