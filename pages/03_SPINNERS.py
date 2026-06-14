@@ -1111,7 +1111,7 @@ with row2[1]:
 df_filtered = df_spin_base.copy()
 
 if not _multiselect_is_all(bowl_team_sel):
-    df_filtered = df_filtered[df_filtered[team_column].isin([t for t in bowl_team_sel if t != "All"])]
+    df_filtered = df_filtered[df_filtered[bowl_team_sel].isin([t for t in bowl_team_sel if t != "All"])]
 
 if not _multiselect_is_all(bowler_sel):
     if "BowlerName" in df_filtered.columns:
