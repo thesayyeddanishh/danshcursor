@@ -1005,7 +1005,7 @@ def _multiselect_is_all(sel):
     return sel is None or len(sel) == 0 or "All" in sel
 
 
-all_teams = ["All"] + sorted(df_seam_base["BowlingTeam"].dropna().unique().tolist())
+all_teams = ["All"] + sorted(df_spin_base["BowlingTeam"].dropna().unique().tolist())
 
 row1 = st.columns(4)
 with row1[0]:
