@@ -1256,9 +1256,10 @@ def create_speed_metrics_bar(df_in, delivery_type):
         # Keep left spine
         ax.spines["left"].set_visible(True)
         ax.spines["left"].set_linewidth(1.2)
+        ax.spines["left"].set_position(("data", 0))
     
         ax.set_xlim(
-            0,
+            -max_val * 0.15,
             max_val * 1.35
         )
     
