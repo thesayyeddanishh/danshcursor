@@ -1145,15 +1145,15 @@ def create_speed_metrics_bar(df_in, delivery_type):
             val = row_data[metric]
             
             # Simple bar for the value
-            ax.barh([0], [val], color='#4A90E2', height=0.5)
+            ax.barh([0], [val], color='#ff5000', height=0.5)
             
             # Remove all spines and ticks for a clean "cell" look
             ax.set_axis_off()
-            ax.text(val + (val * 0.1), 0, f"{val:.1f}", va='center', fontsize=10)
+            ax.text(val + (val * 0.1), 0, f"{val:.1f}", va='center', fontsize=14)
             
             # Add titles only on the top row
             if row_idx == 0:
-                ax.set_title(metric, fontsize=10, fontweight='bold')
+                ax.set_title(metric, fontsize=14, fontweight='bold')
                 
         # Add the Speed Group label on the far left
         axes[row_idx, 0].text(-0.2, 0, group_name, va='center', ha='right', 
