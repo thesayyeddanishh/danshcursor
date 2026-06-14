@@ -45,7 +45,7 @@ def fig_to_image(fig):
 # Chart 2: CREASE BEEHIVE
 def create_crease_beehive(df_in, delivery_type):
     if df_in.empty:
-        fig, ax = plt.subplots(figsize=(7, 5)); 
+        fig, ax = plt.subplots(figsize=(7, 6)); 
         ax.text(0.5, 0.5, "No data for Analysis", ha='center', va='center', fontsize=12); 
         ax.axis('off'); 
         return fig
