@@ -698,7 +698,7 @@ def get_interception_bins():
         "0m-1m": [0, 1],
         "1m-2m": [1, 2],
         "2m-3m": [2, 3],
-        "3m+": [3, 100]  # Assuming max possible value is < 100
+        "3m+": [3, 10]  # Assuming max possible value is < 100
     }
 
 def create_interception_side_on(df_in, delivery_type):
@@ -750,36 +750,35 @@ def create_interception_side_on(df_in, delivery_type):
         # === USING PROVIDED LOGIC: PLOT (InterceptionX + 10) on X-axis ===
         ax_scatter.scatter(
             df_slice["InterceptionX"] + 10, df_slice["InterceptionZ"], 
-            color=color_map[ctype],edgecolors='white', linewidths=0.3, s=60, label=ctype
+            color=color_map[ctype],edgecolors='white', linewidths=0.3, s=, label=ctype
         )
 
     # 2. Draw Vertical Dashed Lines with Labels (FIXED LINES: 0.0, 1.25, 2.0, 3.0)
     line_specs = {
         0.0: "Stumps",
-        1.250: "Crease",
+        1.000: "1m",
         2.000: "2m",     
         3.000: "3m" 
     }
     
     for x_val, label in line_specs.items():
-        ax_scatter.axvline(x=x_val, color='lightgrey', linestyle='--', linewidth=0.8, alpha=0.7)     
+        ax_scatter.axvline(x=x_val, color='lightgrey', linestyle='--', linewidth=0.8, alpha=0.4)     
         ax_scatter.text(x_val, 1.45, label.split(':')[-1].strip(), ha='center', va='center', fontsize=8, color='grey', bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', pad=1))
         
-    ax_scatter.axhline(y=0.78, color="grey", linestyle="-", linewidth=0.5)
+    ax_scatter.axhline(y=0.78, color="grey", linestyle="--", linewidth=0.3)
     # --- Annotation ---
-    ax_scatter.text(0.1, 0.78, "Stumps Height", ha='left', va='bottom', fontsize=7, color="grey", transform=ax_scatter.transData)
+    ax_scatter.text(0.1, 0.78, "Stump Height", ha='left', va='bottom', fontsize=7, color="grey", transform=ax_scatter.transData)
     
     # Set Y limit as fixed
-    y_limit = 1.5
+    y_limit = 2
     
     # Set X limit based on delivery type
     if delivery_type == "Seam":
-        x_limit_max = 3.4
+        x_limit_max = 3.5
     elif delivery_type == "Spin":
-        x_limit_max = 4.4
+        x_limit_max = 4.5
     else:
-        # Fallback to the original seam limit if type is unknown
-        x_limit_max = 3.4 
+        x_limit_max = 3.5 
         
     x_limit_min = -0.2
     
