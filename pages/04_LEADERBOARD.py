@@ -253,7 +253,7 @@ else:
                 elif f3 == "SHORT":
                     df_filtered = df_role_base[df_role_base["BounceX"] > 6.2]
                     
-            elif f2 == "% /Turn Direction":
+            elif f2 == "Turn Direction":
                 f3 = st.selectbox("Select Ball Turn Direction", ["Turn Left", "No Turn", "Turn Right"])
                 filter_label = f3
                 
@@ -702,7 +702,7 @@ else:
                                 final_cols = ["BowlerName", "Balls_Bowled", "Wickets", "Bowling Strike Rate"]
                                 col_titles = ["BOWLER NAME", "BALLS", "WICKETS", "BOWLING STRIKE RATE"]
                                 pct_col_name = None
-                            elif f2 in ["% by Lengths", "% /Turn Direction"]:
+                            elif f2 in ["% by Lengths", "Turn Direction"]:
                                 leaderboard["% Metric"] = (
                                     leaderboard["Balls_Bowled"] / leaderboard["Total_Balls"]
                                 ) * 100
@@ -748,7 +748,7 @@ else:
                                 final_cols = ["BowlerName", "Balls_Bowled", "Wickets", "Economy"]
                                 col_titles = ["Bowler", "Balls", "Wickets", "Economy"]
                                 pct_col_name = None
-                            elif f2 in ["% by Lengths", "% /Turn Direction"]:
+                            elif f2 in ["% by Lengths", "Turn Direction"]:
                                 leaderboard["% Metric"] = (
                                     leaderboard["Balls_Bowled"] / leaderboard["Total_Balls"]
                                 ) * 100
