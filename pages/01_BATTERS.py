@@ -29,8 +29,7 @@ from cricket_config import (
     add_crease_lateral_zone_background,
 )
 
-from page_nav import render_page_nav
-from page_nav import _NAV
+from page_nav import render_page_nav, _NAV
 
 # --- 1. GLOBAL UTILITY FUNCTIONS ---
 
@@ -1239,7 +1238,7 @@ df_raw = st.session_state['data_df']
 _cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
 # Header: wide title | file | format (right) | legend
 import streamlit as st
-from components.navigation import render_page_nav, _NAV # Assuming your nav code is here
+from page_nav import render_page_nav, _NAV
 
 # 1. Setup the 5-column layout
 # Adjust the numbers [0.5, 3, 1, 2, 0.5] to change the width of each section
