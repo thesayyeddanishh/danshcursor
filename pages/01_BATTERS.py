@@ -1132,7 +1132,7 @@ def create_speed_metrics_bar(df_in, delivery_type):
     # Finally, fill any remaining NaNs (0/0 cases) with 0
     summary["Avg"] = summary["Avg"].fillna(0)
 
-    Define plot area
+    #Define plot area
     num_groups = len(summary)
     fig, axes = plt.subplots(num_groups, 4, figsize=(12, num_groups * 0.8), sharex='col', sharey='row')
     
