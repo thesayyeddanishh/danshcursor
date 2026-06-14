@@ -321,7 +321,7 @@ def create_pitch_map(df_in, delivery_type):
     pitch_others = nw[~is_boundary]
     pitch_wickets = df_in[df_in["Wicket"] == True]
 
-    fig, ax = plt.subplots(figsize=(4.5, 7))
+    fig, ax = plt.subplots(figsize=(4, 7))
     ax.set_facecolor("white")
     fig.patch.set_facecolor("white")
 
