@@ -1223,7 +1223,7 @@ def create_speed_metrics_bar(df_in, delivery_type):
         ax.set_yticks(y)
         ax.set_yticklabels(
             groups,
-            fontsize=13
+            fontsize=16
         )
 
         ax.invert_yaxis()
