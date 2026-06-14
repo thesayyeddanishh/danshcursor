@@ -121,7 +121,7 @@ st.markdown(
 )
 
 _cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
-_col_title_lb, _col_fmt_lb = st.columns([3.2, 1.2])
+_col_title_lb, _col_fmt_lb = st.columns([2.5, 1.2])
 with _col_title_lb:
     st.title("LEADERBOARD")
 with _col_fmt_lb:
