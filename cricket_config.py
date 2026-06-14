@@ -459,7 +459,7 @@ FORMAT_BANNER_STYLE = "color:#ff6600;font-size:calc(1.05rem + 2pt);font-weight:7
 
 def pitch_map_figsize(cfg: FormatConfig, width: float = 3.0) -> Tuple[float, float]:
     """Match pitch scatter height to pitch-length bar charts (test vs white-ball)."""
-    h = 6.0 if cfg.is_test else 4.7
+    h = 6.0 if cfg.is_test else 6
     return (width, h)
 
 
