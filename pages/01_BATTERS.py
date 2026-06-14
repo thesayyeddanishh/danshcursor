@@ -1089,7 +1089,9 @@ def create_wagon_wheel(df_in, delivery_type):
                 autotext.set_text('')
     ax_wagon.axis('equal');
 
+#=============================================
 #------------ Chart 12: Speed Effectiveness
+#=============================================
 def create_speed_metrics_bar(df_in, delivery_type):
     if df_in.empty:
         fig, ax = plt.subplots(figsize=(5, 4))
@@ -1134,16 +1136,18 @@ def create_speed_metrics_bar(df_in, delivery_type):
     # Finally, fill any remaining NaNs (0/0 cases) with 0
     summary["Avg"] = summary["Avg"].fillna(0)
 
-    # 4. Plotting - Cleaner Aesthetics
-    # Use a softer blue and a clean, light background
-    bar_color = '#4A90E2' 
+    # 4. Plotting - Swapped Layout
+    bar_color = '#4A90E2'
     text_color = '#333333'
     
-    fig, axes = plt.subplots(1, 4, figsize=(15, 3.5), sharey=True)
-    fig.patch.set_facecolor('white') 
+    # Figure: 4 rows (one for each speed group), 4 columns (one for each metric)
+    # If you have 5 speed groups, change the 4 in (4, 4) to 5
+    num_groups = len(ordered_groups)
+    fig, axes = plt.subplots(1, 4, figsize=(15, 0.7 * num_groups + 1.5), sharey=True)
+    fig.patch.set_facecolor('white')
     
-    y = np.arange(len(ordered_groups))
-    height = 0.6 
+    y = np.arange(num_groups)
+    height = 0.6
 
     metrics = ["Runs", "Dismissals", "Avg", "SR"]
     titles = ["Total Runs", "Dismissals", "Batting Avg", "Strike Rate"]
@@ -1152,36 +1156,30 @@ def create_speed_metrics_bar(df_in, delivery_type):
         ax.set_facecolor('white')
         vals = summary[metric]
         
-        # Add a subtle grid to help the eye align values across rows
         ax.grid(axis='x', linestyle='--', alpha=0.3, zorder=0)
-        
         ax.barh(y, vals, color=bar_color, edgecolor='none', height=height, zorder=2)
         ax.set_title(title, fontsize=12, fontweight='bold', color=text_color, pad=12)
         
-        # Position labels outside the bars for consistency
+        # Labels outside the bars
         max_val = vals.max() if vals.max() > 0 else 1
         for i, v in enumerate(vals):
             ax.text(
                 v + (max_val * 0.03), i, 
                 f'{v:.0f}' if metric not in ["Avg", "SR"] else f'{v:.1f}',
-                va='center', ha='left', fontsize=10, color=text_color, fontweight='medium'
+                va='center', ha='left', fontsize=10, color=text_color
             )
             
-        # Clean up spines (the box around the chart)
         ax.spines[['top', 'right', 'bottom']].set_visible(False)
-        ax.spines['left'].set_color('#dddddd') 
+        ax.spines['left'].set_color('#dddddd')
         ax.invert_yaxis()
-        
-        # Give the bars room to breathe on the right side
         ax.set_xlim(0, max_val * 1.35)
 
-    # Formatting Y-ticks
+    # Set Speed Groups as the Y-axis labels on the far left column
     axes[0].set_yticks(y)
     axes[0].set_yticklabels(ordered_groups, fontsize=11, color=text_color, fontweight='bold')
     axes[0].tick_params(axis='y', length=0)
     
     plt.tight_layout(pad=2.0)
-    
     return fig
 
 #----------------------------------------
