@@ -96,8 +96,8 @@ def create_crease_beehive(df_in, delivery_type):
 
     # -----------------------------------------------------------
     # --- 1. SETUP SUBPLOTS (Increased Figure Width) ---
-    # Increased width from 7 to 8 for a wider Beehive chart relative to height
-    fig = plt.figure(figsize=(7, 5))
+
+    fig = plt.figure(figsize=(7, 7))
     gs = fig.add_gridspec(2, 1, height_ratios=[4, 1], hspace=0.005)
     ax_bh = fig.add_subplot(gs[0, 0])      # Top subplot (Beehive)
     ax_boxes = fig.add_subplot(gs[1, 0])   # Bottom subplot (Lateral Boxes)
@@ -114,7 +114,7 @@ def create_crease_beehive(df_in, delivery_type):
         s=40,
         c="lightgrey",
         edgecolor="white",
-        linewidths=1.0,
+        linewidths=0.0,
         alpha=0.95,
         label="Regular Ball",
         zorder=3,
@@ -125,7 +125,7 @@ def create_crease_beehive(df_in, delivery_type):
         s=80,
         c="royalblue",
         edgecolor="white",
-        linewidths=1.0,
+        linewidths=0.0,
         alpha=0.95,
         label="Boundary",
         zorder=4,
@@ -136,7 +136,7 @@ def create_crease_beehive(df_in, delivery_type):
         s=80,
         c="red",
         edgecolor="white",
-        linewidths=1.0,
+        linewidths=0.0,
         alpha=0.95,
         label="Wicket",
         zorder=5,
@@ -155,7 +155,7 @@ def create_crease_beehive(df_in, delivery_type):
 
     # --- Formatting ---
     ax_bh.set_xlim([-1, 1])
-    ax_bh.set_ylim([0, 2])
+    ax_bh.set_ylim([-0.25, 2])
     ax_bh.set_aspect('equal', adjustable='box')
     ax_bh.set_xticks([]); ax_bh.set_yticks([]); ax_bh.grid(False)
     for spine in ax_bh.spines.values():
