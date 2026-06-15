@@ -122,7 +122,7 @@ st.write("Wait for the next line to turn blue after uploading")
 
 if "data_df" in st.session_state:
     df_loaded = st.session_state["data_df"]
-    st.info("CSV is loaded. Open **Batters**, **Pacers**, **Spinners**, or **Leaderboard** from the sidebar.")
+    st.info("CSV is loaded. Open **BATTERS**, **PACERS**, **SPINNERS**, or **LEADERBOARD** from the sidebar.")
     st.write(f"Total deliveries: {len(df_loaded):,}")
     if st.checkbox("Show first 5 rows"):
         st.write(f"**File:** `{st.session_state.get('file_name', 'N/A')}`")
