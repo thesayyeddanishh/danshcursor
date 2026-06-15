@@ -18,12 +18,12 @@ REQUIRED_COLS = [
     "BatsmanName",
     "BowlerName",
     "BowlingTeam",
-    "BattingTeam"
+    "BattingTeam",
     "IsBowlerRightHanded",
     "IsBatsmanRightHanded",
     "Wicket",
     "Runs",
-    "ReleaseY"
+    "ReleaseY",
     "ReleaseZ",
     "ReleaseSpeed",
     "Deviation",
