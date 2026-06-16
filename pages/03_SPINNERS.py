@@ -769,7 +769,7 @@ def create_spinner_hitting_missing(df_in, handedness_label):
 
         for bar, value in zip(bars, meta["data"]):
             text = "N/A" if np.isnan(value) else f"{value:.1f}" if metric != "Wickets" else f"{int(value)}"
-            ax.text(bar.get_width(),
+            ax.text(bar.get_width() + 0.1,
                     bar.get_y() + bar.get_height() / 2,
                     text, ha='left', va='center', fontsize=20, weight='bold')
 
