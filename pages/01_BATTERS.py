@@ -69,12 +69,12 @@ def create_crease_beehive(df_in, delivery_type):
         if z > 1.85: return None
         
         if row["IsBatsmanRightHanded"] == True:
-            if 0.115 < y <= 1.5: return "LEG"
+            if 0.115 < y <= 1.75: return "LEG"
             elif -0.115 < y <= 0.115: return "STUMPS"
             elif -0.415 < y <= -0.115: return "OUTSIDE OFF"
             elif -1.245 < y <= -0.415: return "WAY OUTSIDE OFF"
         else:  # Left-Handed (mirror image)
-            if -0.715 <= y < -0.115: return "LEG"
+            if -1.75 <= y < -0.115: return "LEG"
             elif -0.115 <= y < 0.115: return "STUMPS"
             elif 0.115 <= y < 0.415: return "OUTSIDE OFF"
             elif 0.415 <= y < 1.245: return "WAY OUTSIDE OFF"
