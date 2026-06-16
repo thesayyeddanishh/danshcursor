@@ -465,10 +465,10 @@ def pitch_map_figsize(cfg: FormatConfig, width: float = 3.0) -> Tuple[float, flo
 
 def add_crease_lateral_zone_background(ax, is_rhb: bool, zorder: int = 0) -> None:
     m = 1 if is_rhb else -1
-    ax.axvspan(-0.9 * m, -0.65 * m, facecolor="#ffffcc", alpha=0.25, zorder=zorder, linewidth=0)
-    ax.axvspan(-0.65 * m, -0.18 * m, facecolor="#ffcccc", alpha=0.25, zorder=zorder, linewidth=0)
-    ax.axvspan(-0.18 * m, 0.18 * m, facecolor="#ccffcc", alpha=0.25, zorder=zorder, linewidth=0)
-    ax.axvspan(0.18 * m, 0.9 * m, facecolor="#cce5ff", alpha=0.25, zorder=zorder, linewidth=0)
+    ax.axvspan(-1.245 * m, -0.415 * m, facecolor="#ffffcc", alpha=0.25, zorder=zorder, linewidth=0)
+    ax.axvspan(-0.415 * m, -0.115 * m, facecolor="#ffcccc", alpha=0.25, zorder=zorder, linewidth=0)
+    ax.axvspan(-0.115 * m, 0.115 * m, facecolor="#ccffcc", alpha=0.25, zorder=zorder, linewidth=0)
+    ax.axvspan(0.115 * m, 0.6 * m, facecolor="#cce5ff", alpha=0.25, zorder=zorder, linewidth=0)
 
 
 def pitch_bin_percentages(df: pd.DataFrame, pitch_bins: Dict[str, List[float]], bounce_col: str = "BounceX") -> Dict[str, float]:
