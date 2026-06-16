@@ -64,6 +64,10 @@ def create_crease_beehive(df_in, delivery_type):
 
     def assign_lateral_zone(row):
         y = row["CreaseY"]
+        z = row["CreaseZ"]
+
+        if z > 1.85: return None
+        
         if row["IsBatsmanRightHanded"] == True:
             if 0.115 < y <= 0.715: return "LEG"
             elif -0.115 < y <= 0.115: return "STUMPS"
@@ -74,6 +78,7 @@ def create_crease_beehive(df_in, delivery_type):
             elif -0.115 <= y < 0.115: return "STUMPS"
             elif 0.115 <= y < 0.415: return "OUTSIDE OFF"
             elif 0.415 <= y < 1.245: return "WAY OUTSIDE OFF"
+        return None
             
     df_lateral["LateralZone"] = df_lateral.apply(assign_lateral_zone, axis=1)
     
