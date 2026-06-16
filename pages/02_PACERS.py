@@ -114,8 +114,8 @@ def create_pacer_pitch_map(df_in):
             label="Wicket",
         )
 
-    ax.axvline(x=-0.18, color="#777777", linestyle="-", linewidth=0.5)
-    ax.axvline(x=0.18, color="#777777", linestyle="-", linewidth=0.5)
+    ax.axvline(x=-0.115, color="#777777", linestyle="-", linewidth=0.5)
+    ax.axvline(x=0.115, color="#777777", linestyle="-", linewidth=0.5)
     ax.axvline(x=0, color="#777777", linestyle="-", linewidth=0.5)
 
     ax.set_xlim([-1.5, 1.5])
@@ -299,18 +299,21 @@ def create_pacer_crease_beehive(df_in, handedness_label): # Renamed function and
 
     def assign_lateral_zone(row):
         y = row["CreaseY"]
+        z = row["CreaseZ"]
+
+        if z > 1.85: return None
+        
         if row["IsBatsmanRightHanded"] == True:
-            # RHB: Off side is negative Y, Leg side is positive Y
-            if y > 0.18: return "LEG"
-            elif y >= -0.18: return "STUMPS"
-            elif y > -0.65: return "OUTSIDE OFF"
-            else: return "WAY OUTSIDE OFF"
-        else: # Left-Handed
-            # LHB: Leg side is negative Y, Off side is positive Y
-            if y > 0.65: return "WAY OUTSIDE OFF"
-            elif y > 0.18: return "OUTSIDE OFF"
-            elif y >= -0.18: return "STUMPS"
-            else: return "LEG"
+            if 0.115 < y <= 1.75: return "LEG"
+            elif -0.115 < y <= 0.115: return "STUMPS"
+            elif -0.415 < y <= -0.115: return "OUTSIDE OFF"
+            elif -1.245 < y <= -0.415: return "WAY OUTSIDE OFF"
+        else :
+            if -1.75 <= y < -0.115: return "LEG"
+            elif -0.115 <= y < 0.115: return "STUMPS"
+            elif 0.115 <= y < 0.415: return "OUTSIDE OFF"
+            elif 0.415 <= y < 1.245: return "WAY OUTSIDE OFF"
+        return None
             
     df_lateral["LateralZone"] = df_lateral.apply(assign_lateral_zone, axis=1)
     
@@ -381,13 +384,13 @@ def create_pacer_crease_beehive(df_in, handedness_label): # Renamed function and
     )
 
     # --- Reference Lines ---
-    ax_bh.axvline(x=-0.18, color="grey", linestyle="--", linewidth=0.5, zorder=2)
-    ax_bh.axvline(x=0.18, color="grey", linestyle="--", linewidth=0.5, zorder=2)
+    ax_bh.axvline(x=-0.115, color="grey", linestyle="--", linewidth=0.5, zorder=2)
+    ax_bh.axvline(x=0.115, color="grey", linestyle="--", linewidth=0.5, zorder=2)
     ax_bh.axvline(x=0, color="grey", linestyle="--", linewidth=0.5, zorder=2)
-    ax_bh.axhline(y=0.78, color="grey", linestyle="-", linewidth=0.25, zorder=2)
+    ax_bh.axhline(y=0.746, color="grey", linestyle="-", linewidth=0.25, zorder=2)
 
     # --- Annotation ---
-    ax_bh.text(-1.5, 0.78, "Stump line", ha="left", va="bottom", fontsize=8, color="grey", transform=ax_bh.transData)
+    ax_bh.text(-1.5, 0.746, "Stump line", ha="left", va="bottom", fontsize=8, color="grey", transform=ax_bh.transData)
 
     # --- Formatting ---
     ax_bh.set_xlim([-1.5, 1.5])
@@ -566,7 +569,7 @@ def create_pacer_release_analysis(df_in, handedness_label):
     )
     
     # Add Stump Lines
-    stump_lines = [-0.18, 0, 0.18]
+    stump_lines = [-0.115, 0, 0.115]
     for y_val in stump_lines:
         ax_map.axvline(x=y_val, color="#777777", linestyle="-", linewidth=0.5)
     
