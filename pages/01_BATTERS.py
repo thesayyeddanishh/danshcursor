@@ -73,7 +73,7 @@ def create_crease_beehive(df_in, delivery_type):
             elif -0.115 < y <= 0.115: return "STUMPS"
             elif -0.415 < y <= -0.115: return "OUTSIDE OFF"
             elif -1.245 < y <= -0.415: return "WAY OUTSIDE OFF"
-        else row["IsBatsmanRightHanded"] == False:
+        else :
             if -1.75 <= y < -0.115: return "LEG"
             elif -0.115 <= y < 0.115: return "STUMPS"
             elif 0.115 <= y < 0.415: return "OUTSIDE OFF"
