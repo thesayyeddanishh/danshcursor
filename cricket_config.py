@@ -498,8 +498,8 @@ def hitting_stumps_mask(df: pd.DataFrame) -> pd.Series:
     sy = pd.to_numeric(df["StumpsY"], errors="coerce")
     sz = pd.to_numeric(df["StumpsZ"], errors="coerce")
     return (
-        (sy >= -0.18)
-        & (sy <= 0.18)
+        (sy >= -0.1503)
+        & (sy <= 0.1503)
         & (sz >= 0)
-        & (sz <= 0.72)
+        & (sz <= 0.746)
     ).fillna(False)
