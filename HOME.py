@@ -92,7 +92,7 @@ def process_upload(uploaded_file) -> bool:
         st.session_state.pop("file_name", None)
         return False
 
-st.title("VR DANshboard")
+st.title("VR Story Assistant")
 fmt_labels = [FORMAT_LABELS[k] for k in FORMAT_KEYS]
 default_key = st.session_state.get("cricket_format", "men_t20i")
 default_idx = FORMAT_KEYS.index(default_key) if default_key in FORMAT_KEYS else 0
