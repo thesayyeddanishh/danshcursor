@@ -1036,6 +1036,8 @@ if "BatsmanName" in df_raw.columns:
 if "BowlerName" in df_raw.columns:
     # Assuming 'BowlerName' is used elsewhere, convert it here too for consistency
     df_raw["BowlerName"] = df_raw["BowlerName"].astype(str).str.upper()
+
+
 # 2. BASE FILTER: ONLY SEAM DELIVERIES
 df_seam_base = df_raw[df_raw["DeliveryType"] == "Seam"]
 
@@ -1071,10 +1073,10 @@ with row1[0]:
 
 # 2. Dynamically filter batsmen options based on chosen team
 if _multiselect_is_all(bowl_team_sel):
-    df_bat_opts = df_raw
+    df_bat_opts = df_seam_base
 else:
     teams_only = [t for t in bowl_team_sel if t != "All"]
-    df_bat_opts = df_raw[df_raw["BowlingTeam"].isin(teams_only)]
+    df_bat_opts = df_seam_base[df_seam_base["BowlingTeam"].isin(teams_only)]
 
 # This defines the variable that was throwing the NameError
 bowler_options = ["All"] + sorted(df_bat_opts["BowlerName"].dropna().unique().tolist())
@@ -1158,7 +1160,7 @@ with row2[1]:
         st.caption("Match N/A")
 
 
-# 4. Apply Filters to the Base spin Data
+# 4. Apply Filters to the Base seam Data
 df_filtered = df_seam_base.copy()
 
 if not _multiselect_is_all(bowl_team_sel):
