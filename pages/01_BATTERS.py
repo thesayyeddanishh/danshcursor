@@ -1399,9 +1399,11 @@ ground_col = next((c for c in df_raw.columns if c.strip().lower() == "ground"), 
 tour_col = next((c for c in df_raw.columns if c.strip().lower() == "tour"), None)
 match_col = next((c for c in df_raw.columns if c.strip().lower() == "match"), None)
 
+
+
 with row1[2]:
     if year_col:
-        year_vals = sorted(df_raw[year_col].dropna().unique().astype(int).astype(str).tolist())
+        year_vals = sorted(pd.to_numeric(df_raw[year_col], errors='coerce').dropna().astype(int).astype(str).unique().tolist())
         selected_years = st.multiselect(
             "Year", 
             ["All"] + year_vals, 
