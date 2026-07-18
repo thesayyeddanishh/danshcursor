@@ -1107,11 +1107,12 @@ def create_speed_metrics_bar(df_in, delivery_type):
     _cfg = resolve_format(
         st.session_state.get("cricket_format", "men_t20i")
     )
+    _unit = st.session_state.get("speed_unit", "kph")
 
     def assign_speed_group(speed):
         if delivery_type == "Seam":
-            return seam_speed_group(speed, _cfg)
-        return spin_speed_group(speed, _cfg)
+            return seam_speed_group(speed, _cfg, _unit)
+        return spin_speed_group(speed, _cfg, _unit)
 
     # -----------------------------
     # Prepare Data
@@ -1131,9 +1132,9 @@ def create_speed_metrics_bar(df_in, delivery_type):
     )
 
     if delivery_type == "Seam":
-        ordered_groups = seam_speed_ordered_groups(_cfg)
+        ordered_groups = seam_speed_ordered_groups(_cfg, _unit)
     else:
-        ordered_groups = spin_speed_ordered_groups(_cfg)
+        ordered_groups = spin_speed_ordered_groups(_cfg, _unit)
 
     # -----------------------------
     # Aggregate
