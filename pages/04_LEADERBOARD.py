@@ -139,6 +139,7 @@ else:
     df_raw = st.session_state['data_df'].copy()
     df_raw.columns = df_raw.columns.str.strip()
     cfg = _cfg
+    unit = st.session_state.get("speed_unit", "kph")
     
     # Clean and explicitly prepare data types for accurate filtering
     df_raw["ReleaseSpeed"] = pd.to_numeric(df_raw["ReleaseSpeed"], errors="coerce")
@@ -195,10 +196,10 @@ else:
                     df_filtered = filter_batter_length(df_raw, f3, cfg)
 
             elif f2 == "PACE":
-                hi, lo = leaderboard_batter_pace_options(cfg)
+                hi, lo = leaderboard_batter_pace_options(cfg, unit)
                 f3 = st.selectbox("Select Pace", [hi, lo])
-                filter_label = f"Pace ({f3} kph)"
-                df_filtered = filter_batter_pace(df_raw, f3, cfg)
+                filter_label = f"Pace ({f3} {unit})"
+                df_filtered = filter_batter_pace(df_raw, f3, cfg, unit)
 
             min_balls = st.number_input("Minimum balls faced", min_value=1, value=10, step=1)
 
@@ -217,10 +218,10 @@ else:
                 df_filtered = filter_pacer_length(df_role_base, f3, cfg)
 
             elif f2 in ["Economy by Pace", "% Balls by Pace", "Bowling Average by Pace"]:
-                hi, lo = leaderboard_batter_pace_options(cfg)
+                hi, lo = leaderboard_batter_pace_options(cfg, unit)
                 f3 = st.selectbox("Select Pace Range", [hi, lo])
-                filter_label = f"Pace ({f3} kph)"
-                df_filtered = filter_pacer_pace(df_role_base, f3, cfg)
+                filter_label = f"Pace ({f3} {unit})"
+                df_filtered = filter_pacer_pace(df_role_base, f3, cfg, unit)
 
             elif f2 in PACERS_METRIC_VIEW_TYPES:
                 df_filtered = df_role_base.copy()
