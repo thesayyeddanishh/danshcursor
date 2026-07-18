@@ -96,8 +96,17 @@ st.title("VR Story Assistant")
 fmt_labels = [FORMAT_LABELS[k] for k in FORMAT_KEYS]
 default_key = st.session_state.get("cricket_format", "men_t20i")
 default_idx = FORMAT_KEYS.index(default_key) if default_key in FORMAT_KEYS else 0
-choice = st.selectbox("Format", fmt_labels, index=default_idx, key="format_select_main")
+c1, c2 = st.columns([3, 1])
+with c1:
+    choice = st.selectbox("Format", fmt_labels, index=default_idx, key="format_select_main")
+with c2:
+    _saved_unit = st.session_state.get("speed_unit", "kph")
+    _unit_default = "MPH" if _saved_unit == "mph" else "KPH"
+    unit_choice = st.segmented_control(
+        "Speed Unit", ["KPH", "MPH"], default=_unit_default, key="speed_unit_select"
+    )
 st.session_state["cricket_format"] = FORMAT_KEYS[fmt_labels.index(choice)]
+st.session_state["speed_unit"] = (unit_choice or _unit_default).lower()
 _cfg = resolve_format(st.session_state["cricket_format"])
 
 st.subheader("2. Upload CSV")
