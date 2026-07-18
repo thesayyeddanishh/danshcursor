@@ -786,9 +786,10 @@ def create_pacer_speed_effectiveness_3col(df_in, handedness_label):
 
     # 1. Define Speed Groups
     cfg = resolve_format(st.session_state.get("cricket_format", "men_t20i"))
+    unit = st.session_state.get("speed_unit", "kph")
 
     def assign_speed_group(speed):
-        return seam_speed_group(speed, cfg)
+        return seam_speed_group(speed, cfg, unit)
 
     df_temp = df_in.copy()
     df_temp["ReleaseSpeed"] = pd.to_numeric(df_temp["ReleaseSpeed"], errors='coerce')
@@ -796,7 +797,7 @@ def create_pacer_speed_effectiveness_3col(df_in, handedness_label):
     df_temp["SpeedGroup"] = df_temp["ReleaseSpeed"].apply(assign_speed_group)
 
     # 2. Aggregate Data (Updated to include Wickets)
-    ordered_groups = pacer_effectiveness_seam_order(cfg)
+    ordered_groups = pacer_effectiveness_seam_order(cfg, unit)
     summary = df_temp.groupby("SpeedGroup").agg(
         Runs=("Runs", "sum"), 
         Balls=("Runs", "count"),
