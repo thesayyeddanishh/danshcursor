@@ -227,43 +227,58 @@ def ordered_spin_keys(cfg: FormatConfig) -> List[str]:
 
 # --- Speed buckets (Batters / Pacers charts) ---
 
-def seam_speed_group(speed: float, cfg: FormatConfig) -> str:
+def _normalize_speed_unit(unit: Optional[str]) -> str:
+    return "mph" if (unit or "kph").strip().lower() == "mph" else "kph"
+
+
+def _seam_speed_bounds(cfg: FormatConfig, unit: str) -> Tuple[int, int]:
+    """(lo, hi) thresholds for seam/pace speed groups per gender and unit."""
+    u = _normalize_speed_unit(unit)
     if cfg.is_womens:
-        if speed < 105:
-            return "<105"
-        if 105 <= speed <= 118:
-            return "105-118"
-        return "118+"
-    if speed < 125:
-        return "<125"
-    if 125 <= speed <= 140:
-        return "125-140"
-    return "140+"
+        return (65, 75) if u == "mph" else (105, 118)
+    return (75, 85) if u == "mph" else (125, 140)
 
 
-def seam_speed_ordered_groups(cfg: FormatConfig) -> List[str]:
+def _spin_speed_bounds(cfg: FormatConfig, unit: str) -> Tuple[int, int]:
+    """(lo, hi) thresholds for spin speed groups per gender and unit."""
+    u = _normalize_speed_unit(unit)
     if cfg.is_womens:
-        return ["118+", "105-118", "<105"]
-    return ["140+", "125-140", "<125"]
+        return (43, 52) if u == "mph" else (70, 85)
+    return (52, 60) if u == "mph" else (85, 95)
 
 
-def spin_speed_group(speed: float, cfg: FormatConfig) -> str:
-    if speed < 85:
-        return "<85"
-    if 85 <= speed <= 95:
-        return "85-95"
-    return "95+"
+def seam_speed_group(speed: float, cfg: FormatConfig, unit: str = "kph") -> str:
+    lo, hi = _seam_speed_bounds(cfg, unit)
+    if speed < lo:
+        return f"<{lo}"
+    if lo <= speed <= hi:
+        return f"{lo}-{hi}"
+    return f"{hi}+"
 
 
-def spin_speed_ordered_groups(cfg: FormatConfig) -> List[str]:
-    return ["95+", "85-95", "<85"]
+def seam_speed_ordered_groups(cfg: FormatConfig, unit: str = "kph") -> List[str]:
+    lo, hi = _seam_speed_bounds(cfg, unit)
+    return [f"{hi}+", f"{lo}-{hi}", f"<{lo}"]
 
 
-def pacer_effectiveness_seam_order(cfg: FormatConfig) -> List[str]:
+def spin_speed_group(speed: float, cfg: FormatConfig, unit: str = "kph") -> str:
+    lo, hi = _spin_speed_bounds(cfg, unit)
+    if speed < lo:
+        return f"<{lo}"
+    if lo <= speed <= hi:
+        return f"{lo}-{hi}"
+    return f"{hi}+"
+
+
+def spin_speed_ordered_groups(cfg: FormatConfig, unit: str = "kph") -> List[str]:
+    lo, hi = _spin_speed_bounds(cfg, unit)
+    return [f"{hi}+", f"{lo}-{hi}", f"<{lo}"]
+
+
+def pacer_effectiveness_seam_order(cfg: FormatConfig, unit: str = "kph") -> List[str]:
     """Y-axis order for pacer 3-col speed chart (matches original apps)."""
-    if cfg.is_womens:
-        return ["<105", "105-118", "118+"]
-    return ["<125", "125-140", "140+"]
+    lo, hi = _seam_speed_bounds(cfg, unit)
+    return [f"<{lo}", f"{lo}-{hi}", f"{hi}+"]
 
 
 # --- Leaderboard length / pace thresholds ---
@@ -277,14 +292,13 @@ def leaderboard_batter_length_options(cfg: FormatConfig) -> List[str]:
     return base + ["BOUNCER"]
 
 
-def leaderboard_batter_pace_options(cfg: FormatConfig) -> Tuple[str, str]:
-    if cfg.is_womens:
-        return "Above 118", "Below 105"
-    return "Above 140", "Below 125"
+def leaderboard_batter_pace_options(cfg: FormatConfig, unit: str = "kph") -> Tuple[str, str]:
+    lo, hi = _seam_speed_bounds(cfg, unit)
+    return f"Above {hi}", f"Below {lo}"
 
 
-def leaderboard_pacer_pace_range_labels(cfg: FormatConfig) -> Tuple[str, str]:
-    return leaderboard_batter_pace_options(cfg)
+def leaderboard_pacer_pace_range_labels(cfg: FormatConfig, unit: str = "kph") -> Tuple[str, str]:
+    return leaderboard_batter_pace_options(cfg, unit)
 
 
 def filter_batter_length(df: pd.DataFrame, f3: str, cfg: FormatConfig) -> pd.DataFrame:
@@ -376,20 +390,19 @@ def filter_pacer_length(df: pd.DataFrame, f3: str, cfg: FormatConfig) -> pd.Data
     return df.copy()
 
 
-def filter_batter_pace(df: pd.DataFrame, f3: str, cfg: FormatConfig) -> pd.DataFrame:
-    hi, lo = leaderboard_batter_pace_options(cfg)
+def filter_batter_pace(df: pd.DataFrame, f3: str, cfg: FormatConfig, unit: str = "kph") -> pd.DataFrame:
+    lo, hi = _seam_speed_bounds(cfg, unit)
+    hi_label, lo_label = f"Above {hi}", f"Below {lo}"
     rs = df["ReleaseSpeed"]
-    if f3 == hi:
-        thr = 118 if cfg.is_womens else 140
-        return df[rs > thr].copy()
-    if f3 == lo:
-        thr = 105 if cfg.is_womens else 125
-        return df[rs < thr].copy()
+    if f3 == hi_label:
+        return df[rs > hi].copy()
+    if f3 == lo_label:
+        return df[rs < lo].copy()
     return df.copy()
 
 
-def filter_pacer_pace(df: pd.DataFrame, f3: str, cfg: FormatConfig) -> pd.DataFrame:
-    return filter_batter_pace(df, f3, cfg)
+def filter_pacer_pace(df: pd.DataFrame, f3: str, cfg: FormatConfig, unit: str = "kph") -> pd.DataFrame:
+    return filter_batter_pace(df, f3, cfg, unit)
 
 
 PACERS_METRIC_VIEW_TYPES: Tuple[str, ...] = (
