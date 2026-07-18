@@ -1,1 +1,1 @@
-Dashboard Link: https://danshcursor.streamlit.app/
+Dashboard Link: https://danshboard.streamlit.app/
